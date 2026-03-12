@@ -90,8 +90,32 @@ class SubstituteTeacherApp {
                 const tabContent = document.getElementById(tabId);
                 tabContent.classList.add('active');
                 tabContent.classList.remove('hidden');
+
+                // 切換到調課紀錄頁籤時，自動載入本月資料
+                if (btn.dataset.tab === 'records') {
+                    this.loadCurrentMonthRecords();
+                }
             });
         });
+    }
+
+    /**
+     * 載入本月調課紀錄
+     */
+    loadCurrentMonthRecords() {
+        // 設定日期為本月第一天到今天
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+        const formatDate = (date) => date.toISOString().split('T')[0];
+
+        document.getElementById('record-start-date').value = formatDate(firstDayOfMonth);
+        document.getElementById('record-end-date').value = formatDate(lastDayOfMonth);
+        document.getElementById('record-teacher').value = '';
+
+        // 自動執行查詢
+        this.searchRecords();
     }
 
     /**
