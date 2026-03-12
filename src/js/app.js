@@ -776,12 +776,12 @@ class SubstituteTeacherApp {
      * 儲存並處理紀錄
      */
     async saveAndProcessRecord(record) {
-        // 儲存紀錄
+        // 儲存紀錄到本地
         this.dataManager.addSubstituteRecord(record);
         this.saveDataToStorage();
 
         // 嘗試同步到 Google Sheets
-        await this.syncRecordToGoogleSheets(record);
+        const syncSuccess = await this.syncRecordToGoogleSheets(record);
 
         // 生成 PDF
         await this.generateSubstitutePDF(record);
@@ -789,8 +789,19 @@ class SubstituteTeacherApp {
         // 重置選擇狀態
         this.cancelSubstitute();
 
+        // 顯示結果
         const typeText = record.type === 'swap' ? '調課' : '代課';
-        alert(`${typeText}紀錄已儲存，PDF 已生成`);
+        const gasUrl = document.getElementById('gas-url').value;
+
+        if (gasUrl) {
+            if (syncSuccess) {
+                alert(`${typeText}紀錄已儲存並同步到雲端，PDF 已生成`);
+            } else {
+                alert(`${typeText}紀錄已儲存到本地，PDF 已生成\n\n⚠ 雲端同步失敗，請檢查 Google Sheets 設定`);
+            }
+        } else {
+            alert(`${typeText}紀錄已儲存到本地，PDF 已生成\n\n提示：可至「設定」頁籤設定 Google Sheets 啟用雲端同步`);
+        }
     }
 
     /**
@@ -842,16 +853,31 @@ class SubstituteTeacherApp {
 
     /**
      * 同步紀錄到 Google Sheets
+     * @returns {Promise<boolean>} 同步是否成功
      */
     async syncRecordToGoogleSheets(record) {
         const url = document.getElementById('gas-url').value;
-        if (!url) return;
+        if (!url) {
+            console.log('未設定 Google Sheets URL，跳過雲端同步');
+            return false;
+        }
 
         try {
-            await this.googleSheetsAPI.appendRecord(url, record);
-            console.log('紀錄已同步到 Google Sheets');
+            console.log('正在同步到 Google Sheets...', record);
+            const result = await this.googleSheetsAPI.appendRecord(url, record);
+            console.log('Google Sheets 同步結果:', result);
+
+            if (result && result.success) {
+                console.log('紀錄已成功同步到 Google Sheets');
+                return true;
+            } else {
+                console.warn('Google Sheets 同步回應異常:', result);
+                return false;
+            }
         } catch (error) {
             console.error('同步到 Google Sheets 失敗:', error);
+            // 不阻止本地儲存，只顯示警告
+            return false;
         }
     }
 

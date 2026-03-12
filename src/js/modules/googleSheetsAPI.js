@@ -4,7 +4,9 @@
  * 透過 Google Apps Script Web App 與 Google Sheets 互動
  * 用於儲存和讀取調代課紀錄
  *
- * 前端透過 fetch 呼叫 GAS Web App 的端點
+ * 注意：GAS Web App 對 CORS 有特殊限制
+ * - GET 請求：正常支援
+ * - POST 請求：需要使用 no-cors 或 redirect: follow
  */
 
 export class GoogleSheetsAPI {
@@ -29,7 +31,7 @@ export class GoogleSheetsAPI {
         try {
             const response = await fetch(`${url}?action=test`, {
                 method: 'GET',
-                mode: 'cors'
+                redirect: 'follow'
             });
 
             if (!response.ok) {
@@ -50,34 +52,50 @@ export class GoogleSheetsAPI {
     }
 
     /**
-     * 新增調課紀錄到 Google Sheets
+     * 發送 POST 請求到 GAS（處理 CORS 問題）
+     * 使用 text/plain 避免 preflight 請求
      * @param {string} url - GAS Web App URL
-     * @param {Object} record - 調課紀錄
+     * @param {Object} payload - 請求內容
      * @returns {Promise<Object>} 操作結果
      */
-    async appendRecord(url, record) {
+    async postToGAS(url, payload) {
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                mode: 'cors',
+                redirect: 'follow',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'text/plain;charset=utf-8'
                 },
-                body: JSON.stringify({
-                    action: 'append',
-                    data: record
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
 
-            return await response.json();
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch {
+                return { success: true, message: text };
+            }
         } catch (error) {
-            console.error('新增紀錄失敗:', error);
+            console.error('GAS 請求失敗:', error);
             throw error;
         }
+    }
+
+    /**
+     * 新增調課紀錄到 Google Sheets
+     * @param {string} url - GAS Web App URL
+     * @param {Object} record - 調課紀錄
+     * @returns {Promise<Object>} 操作結果
+     */
+    async appendRecord(url, record) {
+        return this.postToGAS(url, {
+            action: 'append',
+            data: record
+        });
     }
 
     /**
@@ -95,7 +113,7 @@ export class GoogleSheetsAPI {
 
             const response = await fetch(`${url}?${params}`, {
                 method: 'GET',
-                mode: 'cors'
+                redirect: 'follow'
             });
 
             if (!response.ok) {
@@ -117,28 +135,10 @@ export class GoogleSheetsAPI {
      * @returns {Promise<Object>} 操作結果
      */
     async deleteRecord(url, recordId) {
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'delete',
-                    id: recordId
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('刪除紀錄失敗:', error);
-            throw error;
-        }
+        return this.postToGAS(url, {
+            action: 'delete',
+            id: recordId
+        });
     }
 
     /**
@@ -148,28 +148,10 @@ export class GoogleSheetsAPI {
      * @returns {Promise<Object>} 操作結果
      */
     async batchSync(url, records) {
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                mode: 'cors',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'batchSync',
-                    data: records
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('批次同步失敗:', error);
-            throw error;
-        }
+        return this.postToGAS(url, {
+            action: 'batchSync',
+            data: records
+        });
     }
 }
 
