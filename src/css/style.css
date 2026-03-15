@@ -959,3 +959,208 @@ body {
     color: #64748b;
     z-index: 100;
 }
+
+/* ===================================
+   調代課申請流程優化樣式
+   =================================== */
+
+/* 異動類型選擇器 */
+.change-type-selector {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.change-type-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.change-type-option input[type="radio"] {
+    display: none;
+}
+
+.change-type-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-background);
+    transition: all 0.2s ease;
+}
+
+.change-type-option input[type="radio"]:checked + .change-type-card {
+    border-color: var(--primary-color);
+    background-color: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.change-type-card:hover {
+    border-color: var(--primary-color);
+    background-color: #f8fafc;
+}
+
+.change-type-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.change-type-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.change-type-info strong {
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.change-type-info span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* 代課早期選項（假別選擇） */
+.substitute-early-options {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* 選中課程摘要 */
+.selected-course-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--background-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.summary-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.summary-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* 步驟卡片過渡動畫 */
+.card {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.card.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* 課表僅當日高亮 */
+.schedule-course.today-highlight {
+    background-color: #fef3c7;
+    border: 2px solid #f59e0b;
+}
+
+.schedule-course.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.schedule-course.selectable {
+    cursor: pointer;
+    position: relative;
+}
+
+.schedule-course.selectable::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.schedule-course.selectable:hover::after {
+    opacity: 1;
+}
+
+/* 週課表列標題高亮 */
+.schedule-header.active-day {
+    background-color: #fef3c7;
+    color: #b45309;
+    font-weight: 700;
+}
+
+/* 響應式異動類型選擇器 */
+@media (max-width: 600px) {
+    .change-type-selector {
+        flex-direction: column;
+    }
+
+    .change-type-card {
+        padding: 0.75rem 1rem;
+    }
+
+    .change-type-icon {
+        font-size: 1.5rem;
+    }
+
+    .selected-course-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 流程步驟指示器（可選） */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.step-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.step-dot.active {
+    background-color: var(--primary-color);
+    transform: scale(1.2);
+}
+
+.step-dot.completed {
+    background-color: var(--success-color);
+}
+
+.step-line {
+    width: 30px;
+    height: 2px;
+    background-color: var(--border-color);
+}
+
+.step-line.completed {
+    background-color: var(--success-color);
+}

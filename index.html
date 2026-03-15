@@ -115,8 +115,9 @@
                 </div>
 
                 <div id="substitute-content" class="hidden">
+                <!-- 步驟一：基本設定 -->
                 <div class="card">
-                    <h2>選擇欲調課的課程</h2>
+                    <h2>步驟一：選擇教師與日期</h2>
 
                     <div class="form-row">
                         <div class="form-group">
@@ -130,48 +131,40 @@
                             <input type="date" id="sub-date">
                         </div>
                     </div>
-
-                    <!-- 原任課教師週課表 -->
-                    <div id="original-schedule" class="hidden">
-                        <h3>原任課教師本週課表</h3>
-                        <p class="hint">點擊要調課的課程</p>
-                        <div class="schedule-grid" id="original-schedule-grid">
-                            <!-- 動態生成週課表 -->
-                        </div>
-                    </div>
                 </div>
 
-                <!-- 選中課程資訊 -->
-                <div id="selected-course-info" class="card hidden">
-                    <h2>選中課程資訊</h2>
-                    <div class="course-details">
-                        <p><strong>班級：</strong><span id="sel-class"></span></p>
-                        <p><strong>節次：</strong><span id="sel-period"></span></p>
-                        <p><strong>科目：</strong><span id="sel-subject"></span></p>
-                        <p><strong>原任課教師：</strong><span id="sel-original-teacher"></span></p>
+                <!-- 步驟二：選擇異動類型 -->
+                <div id="step-change-type" class="card hidden">
+                    <h2>步驟二：選擇異動類型</h2>
+
+                    <div class="change-type-selector">
+                        <label class="change-type-option">
+                            <input type="radio" name="change-type-radio" value="substitute" checked>
+                            <div class="change-type-card">
+                                <div class="change-type-icon">👤</div>
+                                <div class="change-type-info">
+                                    <strong>代課</strong>
+                                    <span>他人代理授課，原任課教師請假</span>
+                                </div>
+                            </div>
+                        </label>
+                        <label class="change-type-option">
+                            <input type="radio" name="change-type-radio" value="swap">
+                            <div class="change-type-card">
+                                <div class="change-type-icon">🔄</div>
+                                <div class="change-type-info">
+                                    <strong>調課</strong>
+                                    <span>同班級兩堂課互換時段</span>
+                                </div>
+                            </div>
+                        </label>
                     </div>
 
-                    <h3>代課教師推薦（智慧排序）</h3>
-                    <div class="recommendation-list" id="recommendation-list">
-                        <!-- 動態生成推薦列表 -->
-                    </div>
-
-                    <!-- 異動類型選擇 -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="change-type">異動類型：</label>
-                            <select id="change-type">
-                                <option value="substitute">代課（他人代理授課）</option>
-                                <option value="swap">調課（兩位教師互換）</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- 代課專用：假別選擇 -->
-                    <div id="substitute-options">
-                        <div class="form-row">
+                    <!-- 代課專用：假別選擇（移到選擇課程前） -->
+                    <div id="substitute-options-early" class="substitute-early-options">
+                        <div class="form-row" style="margin-top: 1rem;">
                             <div class="form-group">
-                                <label for="leave-type">假別：</label>
+                                <label for="leave-type">假別：<span style="color: red;">*</span></label>
                                 <select id="leave-type">
                                     <option value="">請選擇假別</option>
                                     <optgroup label="公付假別（不扣時數）">
@@ -192,20 +185,68 @@
                                 <input type="text" id="doc-number" placeholder="如：北教字第1140012345號">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="sub-reason">事由說明：</label>
+                    </div>
+                </div>
+
+                <!-- 步驟三：選擇課程 -->
+                <div id="step-select-course" class="card hidden">
+                    <h2>步驟三：選擇課程</h2>
+                    <p class="hint" id="schedule-hint">點擊要調課的課程（僅顯示 <span id="selected-weekday"></span> 的課程）</p>
+
+                    <!-- 原任課教師週課表 -->
+                    <div id="original-schedule">
+                        <div class="schedule-grid" id="original-schedule-grid">
+                            <!-- 動態生成週課表 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 步驟四：選中課程資訊與確認 -->
+                <div id="selected-course-info" class="card hidden">
+                    <h2>步驟四：確認調代課資訊</h2>
+
+                    <!-- 選中課程摘要 -->
+                    <div class="selected-course-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">班級</span>
+                            <span class="summary-value" id="sel-class"></span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">節次</span>
+                            <span class="summary-value" id="sel-period"></span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">科目</span>
+                            <span class="summary-value" id="sel-subject"></span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">原任課教師</span>
+                            <span class="summary-value" id="sel-original-teacher"></span>
+                        </div>
+                    </div>
+
+                    <!-- 代課專用：代課教師推薦 -->
+                    <div id="substitute-options">
+                        <h3>選擇代課教師</h3>
+                        <div class="recommendation-list" id="recommendation-list">
+                            <!-- 動態生成推薦列表 -->
+                        </div>
+
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="sub-reason">事由說明：<span style="color: red;">*</span></label>
                             <textarea id="sub-reason" rows="2" placeholder="請輸入詳細事由（如：參加研習、身體不適等）"></textarea>
                         </div>
                     </div>
 
                     <!-- 調課專用：選擇互換課程 -->
                     <div id="swap-options" class="hidden">
+                        <h3>選擇互換課程</h3>
                         <div class="form-group">
-                            <label for="swap-course">選擇互換課程：</label>
+                            <label for="swap-course">互換課程：</label>
                             <select id="swap-course">
-                                <option value="">請先選擇欲調課的課程</option>
+                                <option value="">請選擇要互換的課程</option>
                             </select>
-                            <p class="hint" id="swap-hint">調課說明：選擇同班級的另一時段課程進行互換</p>
+                            <p class="hint" id="swap-hint">選擇同班級的另一時段課程進行互換</p>
                         </div>
                         <div id="swap-preview" class="hidden" style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #bae6fd;">
                             <h4 style="margin: 0 0 10px 0; color: #0369a1;">調課預覽</h4>
@@ -215,11 +256,17 @@
                         </div>
                     </div>
 
-                    <div class="action-buttons">
+                    <div class="action-buttons" style="margin-top: 1.5rem;">
                         <button class="btn btn-primary" id="confirm-substitute-btn">確認並產生表單</button>
-                        <button class="btn btn-secondary" id="cancel-substitute-btn">取消</button>
+                        <button class="btn btn-secondary" id="cancel-substitute-btn">重新選擇</button>
                     </div>
                 </div>
+
+                <!-- 隱藏的 change-type select（保持相容性） -->
+                <select id="change-type" class="hidden">
+                    <option value="substitute">代課</option>
+                    <option value="swap">調課</option>
+                </select>
                 </div>
             </section>
 
@@ -451,7 +498,7 @@
 
         <!-- 底部資訊 -->
         <footer class="footer">
-            <p>國中調代課自動化系統 v1.2.0 | 適用於人力資源網2.0匯出之課表</p>
+            <p>國中調代課自動化系統 v1.3.0 | 適用於人力資源網2.0匯出之課表</p>
         </footer>
     </div>
 

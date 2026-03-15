@@ -520,22 +520,21 @@ class SubstituteTeacherApp {
     bindSubstituteEvents() {
         // 教師選擇變更
         document.getElementById('sub-teacher').addEventListener('change', (e) => {
-            this.onTeacherSelected(e.target.value);
+            this.onTeacherOrDateChanged();
         });
 
         // 日期變更
         document.getElementById('sub-date').addEventListener('change', () => {
-            const teacher = document.getElementById('sub-teacher').value;
-            if (teacher) {
-                this.onTeacherSelected(teacher);
-            }
-            // 如果已選擇課程，驗證日期是否符合
-            this.onDateChanged();
+            this.onTeacherOrDateChanged();
         });
 
-        // 異動類型切換（調課/代課）
-        document.getElementById('change-type').addEventListener('change', (e) => {
-            this.onChangeTypeSelected(e.target.value);
+        // 異動類型切換（調課/代課）- 新版使用 radio button
+        document.querySelectorAll('input[name="change-type-radio"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.onChangeTypeSelected(e.target.value);
+                // 同步更新隱藏的 select（保持相容性）
+                document.getElementById('change-type').value = e.target.value;
+            });
         });
 
         // 假別變更（動態顯示公假字號欄位）
@@ -560,29 +559,100 @@ class SubstituteTeacherApp {
     }
 
     /**
+     * 當教師或日期變更時觸發（新流程）
+     */
+    onTeacherOrDateChanged() {
+        const teacher = document.getElementById('sub-teacher').value;
+        const date = document.getElementById('sub-date').value;
+
+        // 重置後續步驟
+        this.resetStepsAfterBasic();
+
+        if (!teacher || !date) {
+            // 隱藏步驟二及後續
+            document.getElementById('step-change-type').classList.add('hidden');
+            document.getElementById('step-select-course').classList.add('hidden');
+            document.getElementById('selected-course-info').classList.add('hidden');
+            return;
+        }
+
+        // 顯示步驟二：選擇異動類型
+        document.getElementById('step-change-type').classList.remove('hidden');
+
+        // 根據日期更新課表顯示
+        this.showScheduleForDate(teacher, date);
+    }
+
+    /**
+     * 重置基本選擇之後的步驟
+     */
+    resetStepsAfterBasic() {
+        this.selectedCourse = null;
+        this.selectedSubstitute = null;
+        this.selectedSwapCourse = null;
+
+        // 重置異動類型為代課
+        const substituteRadio = document.querySelector('input[name="change-type-radio"][value="substitute"]');
+        if (substituteRadio) {
+            substituteRadio.checked = true;
+        }
+        document.getElementById('change-type').value = 'substitute';
+
+        // 重置假別
+        document.getElementById('leave-type').value = '';
+        document.getElementById('doc-number').value = '';
+        document.getElementById('doc-number-group').style.display = 'none';
+
+        // 顯示代課選項，隱藏調課選項
+        document.getElementById('substitute-options-early').classList.remove('hidden');
+        document.getElementById('substitute-options').classList.remove('hidden');
+        document.getElementById('swap-options').classList.add('hidden');
+
+        // 清除課程選擇狀態
+        document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
+    }
+
+    /**
+     * 根據日期顯示課表，僅高亮該日課程
+     */
+    showScheduleForDate(teacherName, date) {
+        // 取得該教師的週課表
+        const weekSchedule = this.dataManager.getTeacherWeekSchedule(teacherName);
+
+        // 取得選定日期的星期
+        const selectedWeekday = this.getDateWeekday(date);
+        document.getElementById('selected-weekday').textContent = selectedWeekday;
+
+        // 渲染課表並高亮該日
+        this.renderTeacherScheduleWithHighlight(weekSchedule, teacherName, selectedWeekday);
+
+        // 顯示步驟三：選擇課程
+        document.getElementById('step-select-course').classList.remove('hidden');
+    }
+
+    /**
      * 當異動類型變更時觸發（調課/代課）
      */
     onChangeTypeSelected(type) {
+        const substituteOptionsEarly = document.getElementById('substitute-options-early');
         const substituteOptions = document.getElementById('substitute-options');
         const swapOptions = document.getElementById('swap-options');
-        const recommendationList = document.getElementById('recommendation-list');
 
         if (type === 'swap') {
-            // 調課模式
+            // 調課模式：隱藏假別選擇（步驟二）和代課教師推薦（步驟四）
+            substituteOptionsEarly.classList.add('hidden');
             substituteOptions.classList.add('hidden');
             swapOptions.classList.remove('hidden');
-            recommendationList.parentElement.classList.add('hidden');
 
             // 更新調課課程列表
             if (this.selectedCourse) {
                 this.updateSwapCourseList();
             }
         } else {
-            // 代課模式
+            // 代課模式：顯示假別選擇和代課教師推薦
+            substituteOptionsEarly.classList.remove('hidden');
             substituteOptions.classList.remove('hidden');
             swapOptions.classList.add('hidden');
-            recommendationList.parentElement.classList.remove('hidden');
-            recommendationList.parentElement.querySelector('h3').textContent = '代課教師推薦（智慧排序）';
         }
     }
 
@@ -834,6 +904,16 @@ class SubstituteTeacherApp {
      * 渲染教師週課表
      */
     renderTeacherSchedule(weekSchedule, teacherName) {
+        this.renderTeacherScheduleWithHighlight(weekSchedule, teacherName, null);
+    }
+
+    /**
+     * 渲染教師週課表（帶日期高亮）
+     * @param {Array} weekSchedule - 週課表資料
+     * @param {string} teacherName - 教師姓名
+     * @param {string|null} highlightWeekday - 要高亮的星期（如：週一）
+     */
+    renderTeacherScheduleWithHighlight(weekSchedule, teacherName, highlightWeekday) {
         const grid = document.getElementById('original-schedule-grid');
         const days = ['一', '二', '三', '四', '五'];
         const periods = ['第一節', '第二節', '第三節', '第四節', '第五節', '第六節', '第七節'];
@@ -843,7 +923,10 @@ class SubstituteTeacherApp {
         // 標題列
         html += '<div class="schedule-cell schedule-header">節次</div>';
         days.forEach(day => {
-            html += `<div class="schedule-cell schedule-header">週${day}</div>`;
+            const dayName = '週' + day;
+            const isActiveDay = highlightWeekday === dayName;
+            const headerClass = isActiveDay ? 'schedule-cell schedule-header active-day' : 'schedule-cell schedule-header';
+            html += `<div class="${headerClass}">週${day}</div>`;
         });
 
         // 各節次
@@ -852,33 +935,47 @@ class SubstituteTeacherApp {
 
             days.forEach((day, dayIndex) => {
                 const dayName = '週' + day;
+                const isActiveDay = highlightWeekday === dayName;
                 const courses = weekSchedule.filter(c =>
                     c.weekday === dayName && c.period === period
                 );
 
                 if (courses.length > 0) {
                     const course = courses[0];
+                    // 如果有高亮設定，只有該天的課程可選擇
+                    const isSelectable = !highlightWeekday || isActiveDay;
+                    const cellClasses = [
+                        'schedule-cell',
+                        'schedule-course',
+                        isActiveDay ? 'today-highlight' : '',
+                        isSelectable ? 'selectable' : 'disabled'
+                    ].filter(Boolean).join(' ');
+
                     html += `
-                        <div class="schedule-cell schedule-course"
+                        <div class="${cellClasses}"
                              data-weekday="${dayName}"
                              data-period="${period}"
                              data-class="${course.className}"
                              data-subject="${course.subject}"
-                             data-domain="${course.domain}">
+                             data-domain="${course.domain}"
+                             data-selectable="${isSelectable}">
                             <span class="course-class">${course.className}</span>
                             <span class="course-subject">${course.subject}</span>
                         </div>
                     `;
                 } else {
-                    html += `<div class="schedule-cell schedule-course free">空堂</div>`;
+                    const freeClasses = isActiveDay
+                        ? 'schedule-cell schedule-course free today-highlight'
+                        : 'schedule-cell schedule-course free';
+                    html += `<div class="${freeClasses}">空堂</div>`;
                 }
             });
         });
 
         grid.innerHTML = html;
 
-        // 綁定課程點擊事件
-        grid.querySelectorAll('.schedule-course:not(.free)').forEach(cell => {
+        // 綁定課程點擊事件（只綁定可選擇的課程）
+        grid.querySelectorAll('.schedule-course.selectable:not(.free)').forEach(cell => {
             cell.addEventListener('click', (e) => this.onCourseSelected(e.target.closest('.schedule-course')));
         });
     }
@@ -887,6 +984,11 @@ class SubstituteTeacherApp {
      * 當選擇課程時觸發
      */
     onCourseSelected(cell) {
+        // 檢查是否可選擇
+        if (cell.dataset.selectable === 'false') {
+            return;
+        }
+
         // 移除其他選中狀態
         document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
 
@@ -895,6 +997,8 @@ class SubstituteTeacherApp {
 
         // 取得課程資訊
         const teacherName = document.getElementById('sub-teacher').value;
+        const date = document.getElementById('sub-date').value;
+
         this.selectedCourse = {
             weekday: cell.dataset.weekday,
             period: cell.dataset.period,
@@ -904,25 +1008,23 @@ class SubstituteTeacherApp {
             originalTeacher: teacherName
         };
 
-        // 清空日期，強制用戶手動選取符合的日期
-        this.clearDateAndPrompt();
-
         // 更新選中課程資訊顯示
         document.getElementById('sel-class').textContent = this.selectedCourse.className;
         document.getElementById('sel-period').textContent = `${this.selectedCourse.weekday} ${this.selectedCourse.period}`;
         document.getElementById('sel-subject').textContent = this.selectedCourse.subject;
         document.getElementById('sel-original-teacher').textContent = teacherName;
 
-        // 顯示選中課程資訊區塊
+        // 顯示步驟四：確認資訊
         document.getElementById('selected-course-info').classList.remove('hidden');
 
-        // 計算並顯示推薦代課教師
-        this.showRecommendations();
-
-        // 如果是調課模式，更新可互換課程列表
+        // 根據異動類型更新顯示
         const changeType = document.getElementById('change-type').value;
         if (changeType === 'swap') {
+            // 調課模式：更新可互換課程列表
             this.updateSwapCourseList();
+        } else {
+            // 代課模式：計算並顯示推薦代課教師
+            this.showRecommendations();
         }
     }
 
@@ -1156,11 +1258,11 @@ class SubstituteTeacherApp {
         // 生成 PDF
         await this.generateSubstitutePDF(record);
 
-        // 重置選擇狀態
-        this.cancelSubstitute();
+        // 完全重置流程
+        this.resetSubstituteFlow();
 
         // 顯示結果
-        const typeText = record.type === 'swap' ? '調課' : '代課';
+        const typeText = record.type === '調課' ? '調課' : '代課';
         const gasUrl = document.getElementById('gas-url').value;
 
         if (gasUrl) {
@@ -1288,6 +1390,16 @@ class SubstituteTeacherApp {
     }
 
     /**
+     * 顯示日期已調整的提示
+     */
+    showDateAdjustmentHint(weekday, newDate) {
+        const formattedDate = new Date(newDate).toLocaleDateString('zh-TW', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+        console.log(`日期已調整為 ${formattedDate}（${weekday}）`);
+    }
+
+    /**
      * 顯示日期選擇提示
      */
     showDateSelectionPrompt(weekday) {
@@ -1363,36 +1475,70 @@ class SubstituteTeacherApp {
     }
 
     /**
-     * 取消調課
+     * 取消調課（重新選擇）
      */
     cancelSubstitute() {
         this.selectedCourse = null;
         this.selectedSubstitute = null;
         this.selectedSwapCourse = null;
+
+        // 隱藏步驟四
         document.getElementById('selected-course-info').classList.add('hidden');
-        document.getElementById('sub-reason').value = '';
+
+        // 清除課程選擇狀態
         document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
 
-        // 重置新增的表單欄位
-        document.getElementById('change-type').value = 'substitute';
-        document.getElementById('leave-type').value = '';
-        document.getElementById('doc-number').value = '';
-        document.getElementById('doc-number-group').style.display = 'none';
-        document.getElementById('substitute-options').classList.remove('hidden');
-        document.getElementById('swap-options').classList.add('hidden');
-        document.getElementById('swap-course').innerHTML = '<option value="">請先選擇欲調課的課程</option>';
+        // 重置表單欄位
+        document.getElementById('sub-reason').value = '';
+        document.getElementById('swap-course').innerHTML = '<option value="">請選擇要互換的課程</option>';
         document.getElementById('swap-validation-error').classList.add('hidden');
         document.getElementById('swap-preview').classList.add('hidden');
         document.querySelectorAll('.recommendation-item.selected').forEach(i => i.classList.remove('selected'));
 
-        // 恢復推薦列表顯示
-        document.getElementById('recommendation-list').parentElement.classList.remove('hidden');
+        // 注意：不重置教師、日期、異動類型和假別，讓用戶可以快速重新選擇課程
+    }
 
-        // 清除日期相關提示
-        const dateHint = document.getElementById('date-adjustment-hint');
-        if (dateHint) dateHint.style.display = 'none';
-        const dateWarning = document.getElementById('date-weekday-warning');
-        if (dateWarning) dateWarning.style.display = 'none';
+    /**
+     * 完全重置調代課流程
+     */
+    resetSubstituteFlow() {
+        this.selectedCourse = null;
+        this.selectedSubstitute = null;
+        this.selectedSwapCourse = null;
+
+        // 重置所有步驟
+        document.getElementById('sub-teacher').value = '';
+        document.getElementById('sub-date').value = new Date().toISOString().split('T')[0];
+
+        // 隱藏步驟二、三、四
+        document.getElementById('step-change-type').classList.add('hidden');
+        document.getElementById('step-select-course').classList.add('hidden');
+        document.getElementById('selected-course-info').classList.add('hidden');
+
+        // 重置異動類型為代課
+        const substituteRadio = document.querySelector('input[name="change-type-radio"][value="substitute"]');
+        if (substituteRadio) {
+            substituteRadio.checked = true;
+        }
+        document.getElementById('change-type').value = 'substitute';
+
+        // 重置假別和表單欄位
+        document.getElementById('leave-type').value = '';
+        document.getElementById('doc-number').value = '';
+        document.getElementById('doc-number-group').style.display = 'none';
+        document.getElementById('sub-reason').value = '';
+
+        // 重置選項顯示
+        document.getElementById('substitute-options-early').classList.remove('hidden');
+        document.getElementById('substitute-options').classList.remove('hidden');
+        document.getElementById('swap-options').classList.add('hidden');
+        document.getElementById('swap-course').innerHTML = '<option value="">請選擇要互換的課程</option>';
+        document.getElementById('swap-validation-error').classList.add('hidden');
+        document.getElementById('swap-preview').classList.add('hidden');
+
+        // 清除課程選擇狀態
+        document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.recommendation-item.selected').forEach(i => i.classList.remove('selected'));
     }
 
     /**
