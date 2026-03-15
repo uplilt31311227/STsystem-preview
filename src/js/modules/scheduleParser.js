@@ -6,6 +6,10 @@
  *
  * 預期欄位格式：
  * 週次, 節次, 年級, 班級, 教師姓名, 身分證字號或居留證號, 類別, 領域, 科目, 語言別/校訂課程名稱, 上課頻率, 起始週
+ *
+ * 課程名稱規則：
+ * - 優先使用「語言別/校訂課程名稱」欄位值作為課程顯示名稱
+ * - 若「語言別/校訂課程名稱」為空，則使用「科目」欄位值
  */
 
 export class ScheduleParser {
@@ -175,9 +179,12 @@ export class ScheduleParser {
             const className = row[fieldMap.className]?.trim();
             const teacher = row[fieldMap.teacher]?.trim();
             const domain = row[fieldMap.domain]?.trim() || '';
-            const subject = row[fieldMap.subject]?.trim() || '';
-            const courseName = row[fieldMap.courseName]?.trim() || subject;
+            const rawSubject = row[fieldMap.subject]?.trim() || '';
+            const courseName = row[fieldMap.courseName]?.trim() || '';
             const category = row[fieldMap.category]?.trim() || '';
+
+            // 課程顯示名稱：優先使用「語言別/校訂課程名稱」，若為空則使用「科目」
+            const subject = courseName || rawSubject;
 
             // 跳過無效資料
             if (!weekday || !period || !className || !teacher) {
@@ -192,8 +199,9 @@ export class ScheduleParser {
                 className,
                 teacher,
                 domain,
-                subject,
-                courseName,
+                subject,         // 顯示用名稱（優先使用校訂課程名稱）
+                rawSubject,      // 原始科目欄位值
+                courseName,      // 語言別/校訂課程名稱欄位值
                 category
             });
 
