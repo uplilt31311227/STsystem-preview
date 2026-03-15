@@ -127,7 +127,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="sub-date">調課日期：</label>
+                            <label for="sub-date">調代課日期：<span id="date-label-hint" style="font-weight: normal; color: #6b7280;"></span></label>
                             <input type="date" id="sub-date">
                         </div>
                     </div>
@@ -238,16 +238,36 @@
                         </div>
                     </div>
 
-                    <!-- 調課專用：選擇互換課程 -->
+                    <!-- 調課專用：選擇互換課程與日期 -->
                     <div id="swap-options" class="hidden">
-                        <h3>選擇互換課程</h3>
-                        <div class="form-group">
-                            <label for="swap-course">互換課程：</label>
-                            <select id="swap-course">
-                                <option value="">請選擇要互換的課程</option>
-                            </select>
-                            <p class="hint" id="swap-hint">選擇同班級的另一時段課程進行互換</p>
+                        <h3>選擇互換課程與日期</h3>
+
+                        <!-- 時段 A 資訊（已選擇） -->
+                        <div class="swap-slot-info" style="background: #dbeafe; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="font-weight: bold; color: #1d4ed8; margin-bottom: 5px;">時段 A（原課程）</div>
+                            <div id="swap-slot-a-info" style="font-size: 14px;"></div>
                         </div>
+
+                        <!-- 時段 B 選擇 -->
+                        <div class="swap-slot-select" style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="font-weight: bold; color: #b45309; margin-bottom: 10px;">時段 B（互換課程）</div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="swap-date">時段 B 日期：<span style="color: red;">*</span></label>
+                                    <input type="date" id="swap-date">
+                                    <p class="hint" id="swap-date-hint"></p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="swap-course">互換課程：<span style="color: red;">*</span></label>
+                                    <select id="swap-course">
+                                        <option value="">請先選擇時段 B 日期</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="hint" id="swap-hint">調課說明：選擇同班級的另一時段課程進行互換，兩堂課可在不同日期</p>
+
                         <div id="swap-preview" class="hidden" style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #bae6fd;">
                             <h4 style="margin: 0 0 10px 0; color: #0369a1;">調課預覽</h4>
                             <div id="swap-preview-content"></div>
@@ -498,7 +518,7 @@
 
         <!-- 底部資訊 -->
         <footer class="footer">
-            <p>國中調代課自動化系統 v1.3.0 | 適用於人力資源網2.0匯出之課表</p>
+            <p>國中調代課自動化系統 v1.3.1 | 適用於人力資源網2.0匯出之課表</p>
         </footer>
     </div>
 

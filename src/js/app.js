@@ -542,6 +542,11 @@ class SubstituteTeacherApp {
             this.onLeaveTypeChanged(e.target.value);
         });
 
+        // 調課時段 B 日期變更
+        document.getElementById('swap-date')?.addEventListener('change', (e) => {
+            this.onSwapDateChanged(e.target.value);
+        });
+
         // 調課互換課程選擇
         document.getElementById('swap-course')?.addEventListener('change', (e) => {
             this.onSwapCourseSelected(e.target.value);
@@ -637,6 +642,7 @@ class SubstituteTeacherApp {
         const substituteOptionsEarly = document.getElementById('substitute-options-early');
         const substituteOptions = document.getElementById('substitute-options');
         const swapOptions = document.getElementById('swap-options');
+        const dateLabelHint = document.getElementById('date-label-hint');
 
         if (type === 'swap') {
             // 調課模式：隱藏假別選擇（步驟二）和代課教師推薦（步驟四）
@@ -644,8 +650,14 @@ class SubstituteTeacherApp {
             substituteOptions.classList.add('hidden');
             swapOptions.classList.remove('hidden');
 
+            // 更新日期標籤提示
+            if (dateLabelHint) {
+                dateLabelHint.textContent = '（時段 A）';
+            }
+
             // 更新調課課程列表
             if (this.selectedCourse) {
+                this.updateSwapSlotAInfo();
                 this.updateSwapCourseList();
             }
         } else {
@@ -653,6 +665,11 @@ class SubstituteTeacherApp {
             substituteOptionsEarly.classList.remove('hidden');
             substituteOptions.classList.remove('hidden');
             swapOptions.classList.add('hidden');
+
+            // 清除日期標籤提示
+            if (dateLabelHint) {
+                dateLabelHint.textContent = '';
+            }
         }
     }
 
@@ -686,10 +703,56 @@ class SubstituteTeacherApp {
     }
 
     /**
-     * 更新調課可互換課程列表
-     * 顯示同班級不同時段的所有課程，並檢查衝堂
+     * 更新時段 A 資訊顯示
      */
-    updateSwapCourseList() {
+    updateSwapSlotAInfo() {
+        const slotAInfo = document.getElementById('swap-slot-a-info');
+        if (!slotAInfo || !this.selectedCourse) return;
+
+        const dateA = document.getElementById('sub-date').value;
+        const formattedDateA = dateA ? new Date(dateA).toLocaleDateString('zh-TW', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        }) : '';
+
+        slotAInfo.innerHTML = `
+            <span style="color: #1d4ed8;">📅 ${formattedDateA}</span>
+            <span style="margin-left: 10px;">${this.selectedCourse.weekday} ${this.selectedCourse.period}</span>
+            <span style="margin-left: 10px;">${this.selectedCourse.className}</span>
+            <span style="margin-left: 10px;">${this.selectedCourse.originalTeacher}（${this.selectedCourse.subject}）</span>
+        `;
+    }
+
+    /**
+     * 當時段 B 日期變更時觸發
+     */
+    onSwapDateChanged(date) {
+        const swapCourseSelect = document.getElementById('swap-course');
+        const swapDateHint = document.getElementById('swap-date-hint');
+        const swapPreview = document.getElementById('swap-preview');
+
+        // 隱藏預覽
+        swapPreview.classList.add('hidden');
+        this.selectedSwapCourse = null;
+
+        if (!date) {
+            swapCourseSelect.innerHTML = '<option value="">請先選擇時段 B 日期</option>';
+            swapDateHint.textContent = '';
+            return;
+        }
+
+        // 取得時段 B 日期對應的星期
+        const swapWeekday = this.getDateWeekday(date);
+        swapDateHint.innerHTML = `<span style="color: #b45309;">→ ${swapWeekday}</span>`;
+
+        // 更新課程列表（根據時段 B 的星期過濾）
+        this.updateSwapCourseListForDate(swapWeekday);
+    }
+
+    /**
+     * 更新調課可互換課程列表（根據時段 B 日期過濾）
+     * @param {string} swapWeekday - 時段 B 的星期
+     */
+    updateSwapCourseListForDate(swapWeekday) {
         const swapCourseSelect = document.getElementById('swap-course');
         const swapHint = document.getElementById('swap-hint');
         const swapPreview = document.getElementById('swap-preview');
@@ -699,7 +762,7 @@ class SubstituteTeacherApp {
         swapPreview.classList.add('hidden');
 
         if (!this.selectedCourse) {
-            swapCourseSelect.innerHTML = '<option value="">請先選擇欲調課的課程</option>';
+            swapCourseSelect.innerHTML = '<option value="">請先選擇時段 A 的課程</option>';
             return;
         }
 
@@ -709,15 +772,17 @@ class SubstituteTeacherApp {
         const originalPeriod = this.selectedCourse.period;
         const originalTeacher = this.selectedCourse.originalTeacher;
 
-        // 篩選同班級但不同時段的課程
+        // 篩選同班級、時段 B 星期的課程
         const sameclassCourses = scheduleData.filter(course =>
             course.className === targetClass &&
+            course.weekday === swapWeekday &&
             !(course.weekday === originalWeekday && course.period === originalPeriod)
         );
 
         if (sameclassCourses.length === 0) {
-            swapCourseSelect.innerHTML = '<option value="">該班級沒有其他課程可調換</option>';
-            swapHint.innerHTML = `<span style="color: #dc2626;">⚠ ${targetClass} 只有一堂課，無法進行調課</span>`;
+            swapCourseSelect.innerHTML = `<option value="">${swapWeekday} ${targetClass} 沒有課程可調換</option>`;
+            swapHint.innerHTML = `調課說明：選擇同班級的另一時段課程進行互換`;
+            swapHint.style.color = '#6b7280';
             return;
         }
 
@@ -734,15 +799,10 @@ class SubstituteTeacherApp {
             }
         });
 
-        // 按星期、節次排序
-        const weekdayOrder = ['週一', '週二', '週三', '週四', '週五'];
-        const sortCourses = (a, b) => {
-            const weekdayDiff = weekdayOrder.indexOf(a.weekday) - weekdayOrder.indexOf(b.weekday);
-            if (weekdayDiff !== 0) return weekdayDiff;
-            return a.period.localeCompare(b.period);
-        };
-        eligibleCourses.sort(sortCourses);
-        conflictCourses.sort((a, b) => sortCourses(a.course, b.course));
+        // 按節次排序
+        const sortByPeriod = (a, b) => a.period.localeCompare(b.period);
+        eligibleCourses.sort(sortByPeriod);
+        conflictCourses.sort((a, b) => sortByPeriod(a.course, b.course));
 
         // 建立下拉選單
         let options = '<option value="">請選擇要互換的課程</option>';
@@ -750,24 +810,42 @@ class SubstituteTeacherApp {
         // 可調換的課程
         eligibleCourses.forEach(course => {
             const courseId = `${course.weekday}_${course.period}_${course.teacher}`;
-            options += `<option value="${courseId}">${course.weekday} ${course.period} - ${course.teacher}（${course.subject}）</option>`;
+            options += `<option value="${courseId}">${course.period} - ${course.teacher}（${course.subject}）</option>`;
         });
 
         // 衝堂的課程（顯示為禁用）
         conflictCourses.forEach(({ course, conflict }) => {
             const courseId = `${course.weekday}_${course.period}_${course.teacher}`;
-            options += `<option value="${courseId}" disabled style="color: #999;">⚠ ${course.weekday} ${course.period} - ${course.teacher}（${course.subject}）- ${conflict}</option>`;
+            options += `<option value="${courseId}" disabled style="color: #999;">⚠ ${course.period} - ${course.teacher}（${course.subject}）- ${conflict}</option>`;
         });
 
         swapCourseSelect.innerHTML = options;
 
         if (eligibleCourses.length > 0) {
-            swapHint.innerHTML = `✓ 找到 ${eligibleCourses.length} 堂可互換課程（${targetClass}）` +
+            swapHint.innerHTML = `✓ ${swapWeekday} ${targetClass} 有 ${eligibleCourses.length} 堂可互換課程` +
                 (conflictCourses.length > 0 ? `<br><span style="color: #dc2626;">⚠ ${conflictCourses.length} 堂因衝堂無法調換</span>` : '');
             swapHint.style.color = '#16a34a';
         } else {
-            swapHint.innerHTML = `<span style="color: #dc2626;">⚠ ${targetClass} 的其他課程皆因衝堂無法調換</span>`;
+            swapHint.innerHTML = `<span style="color: #dc2626;">⚠ ${swapWeekday} ${targetClass} 的課程皆因衝堂無法調換</span>`;
         }
+    }
+
+    /**
+     * 更新調課可互換課程列表（舊版，保留相容性）
+     * 顯示同班級不同時段的所有課程，並檢查衝堂
+     */
+    updateSwapCourseList() {
+        // 如果有選擇時段 B 日期，使用新的過濾邏輯
+        const swapDate = document.getElementById('swap-date')?.value;
+        if (swapDate) {
+            const swapWeekday = this.getDateWeekday(swapDate);
+            this.updateSwapCourseListForDate(swapWeekday);
+            return;
+        }
+
+        // 否則顯示提示
+        const swapCourseSelect = document.getElementById('swap-course');
+        swapCourseSelect.innerHTML = '<option value="">請先選擇時段 B 日期</option>';
     }
 
     /**
@@ -847,27 +925,41 @@ class SubstituteTeacherApp {
         validationError.classList.add('hidden');
         this.selectedSwapCourse = swapCourse;
 
-        // 顯示調課預覽
+        // 取得兩個日期
+        const dateA = document.getElementById('sub-date').value;
+        const dateB = document.getElementById('swap-date').value;
+
+        const formattedDateA = dateA ? new Date(dateA).toLocaleDateString('zh-TW', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        }) : '';
+        const formattedDateB = dateB ? new Date(dateB).toLocaleDateString('zh-TW', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        }) : '';
+
+        // 顯示調課預覽（包含日期）
         const originalCourse = this.selectedCourse;
         swapPreviewContent.innerHTML = `
             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                 <tr style="background: #e0f2fe;">
                     <th style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">時段</th>
+                    <th style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">日期</th>
                     <th style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">調課前</th>
                     <th style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">→</th>
                     <th style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">調課後</th>
                 </tr>
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center; font-weight: bold;">${originalCourse.weekday} ${originalCourse.period}</td>
+                <tr style="background: #dbeafe;">
+                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center; font-weight: bold;">A</td>
+                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">${formattedDateA}<br>${originalCourse.weekday} ${originalCourse.period}</td>
                     <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">${originalCourse.originalTeacher}（${originalCourse.subject}）</td>
                     <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">→</td>
                     <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center; color: #0369a1; font-weight: bold;">${swapCourse.teacher}（${swapCourse.subject}）</td>
                 </tr>
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center; font-weight: bold;">${swapCourse.weekday} ${swapCourse.period}</td>
+                <tr style="background: #fef3c7;">
+                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center; font-weight: bold;">B</td>
+                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">${formattedDateB}<br>${swapCourse.weekday} ${swapCourse.period}</td>
                     <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">${swapCourse.teacher}（${swapCourse.subject}）</td>
                     <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center;">→</td>
-                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center; color: #0369a1; font-weight: bold;">${originalCourse.originalTeacher}（${originalCourse.subject}）</td>
+                    <td style="padding: 8px; border: 1px solid #bae6fd; text-align: center; color: #b45309; font-weight: bold;">${originalCourse.originalTeacher}（${originalCourse.subject}）</td>
                 </tr>
             </table>
             <p style="margin: 10px 0 0 0; color: #0369a1; font-size: 13px;">
@@ -1020,7 +1112,8 @@ class SubstituteTeacherApp {
         // 根據異動類型更新顯示
         const changeType = document.getElementById('change-type').value;
         if (changeType === 'swap') {
-            // 調課模式：更新可互換課程列表
+            // 調課模式：更新時段 A 資訊和可互換課程列表
+            this.updateSwapSlotAInfo();
             this.updateSwapCourseList();
         } else {
             // 代課模式：計算並顯示推薦代課教師
@@ -1195,6 +1288,12 @@ class SubstituteTeacherApp {
 
         } else {
             // 調課模式驗證
+            const swapDate = document.getElementById('swap-date').value;
+            if (!swapDate) {
+                alert('請選擇時段 B 日期');
+                return;
+            }
+
             const swapCourseId = document.getElementById('swap-course').value;
             if (!swapCourseId) {
                 alert('請選擇要互換的課程');
@@ -1212,19 +1311,28 @@ class SubstituteTeacherApp {
                 return;
             }
 
-            // 建立調課紀錄（記錄完整的互換資訊）
+            // 驗證時段 B 日期與星期是否相符
+            const swapWeekday = this.selectedSwapCourse.weekday;
+            const swapDateWeekday = this.getDateWeekday(swapDate);
+            if (swapDateWeekday !== swapWeekday) {
+                alert(`時段 B 日期錯誤！\n\n選擇的課程是「${swapWeekday}」的課\n但選擇的日期是「${swapDateWeekday}」`);
+                return;
+            }
+
+            // 建立調課紀錄（記錄完整的互換資訊，包含兩個日期）
             const record = {
                 id: Date.now().toString(),
                 type: '調課',
-                date: date,
-                // 原課程資訊（時段1）
+                date: date,           // 時段 A 日期
+                swapDate: swapDate,   // 時段 B 日期
+                // 原課程資訊（時段 A）
                 weekday: this.selectedCourse.weekday,
                 period: this.selectedCourse.period,
                 className: this.selectedCourse.className,
                 subject: this.selectedCourse.subject,
                 domain: this.selectedCourse.domain,
                 originalTeacher: this.selectedCourse.originalTeacher,
-                // 互換課程資訊（時段2）
+                // 互換課程資訊（時段 B）
                 swapWeekday: this.selectedSwapCourse.weekday,
                 swapPeriod: this.selectedSwapCourse.period,
                 swapTeacher: this.selectedSwapCourse.teacher,
@@ -1235,7 +1343,7 @@ class SubstituteTeacherApp {
                 leaveType: '調課',
                 leaveTypeName: '調課',
                 docNumber: '',
-                reason: `${this.selectedCourse.weekday}${this.selectedCourse.period} ↔ ${this.selectedSwapCourse.weekday}${this.selectedSwapCourse.period} 課程互換`,
+                reason: `時段A(${date}) ${this.selectedCourse.weekday}${this.selectedCourse.period} ↔ 時段B(${swapDate}) ${this.selectedSwapCourse.weekday}${this.selectedSwapCourse.period} 課程互換`,
                 createdAt: new Date().toISOString()
             };
 
@@ -1522,6 +1630,12 @@ class SubstituteTeacherApp {
         }
         document.getElementById('change-type').value = 'substitute';
 
+        // 重置日期標籤提示
+        const dateLabelHint = document.getElementById('date-label-hint');
+        if (dateLabelHint) {
+            dateLabelHint.textContent = '';
+        }
+
         // 重置假別和表單欄位
         document.getElementById('leave-type').value = '';
         document.getElementById('doc-number').value = '';
@@ -1532,7 +1646,16 @@ class SubstituteTeacherApp {
         document.getElementById('substitute-options-early').classList.remove('hidden');
         document.getElementById('substitute-options').classList.remove('hidden');
         document.getElementById('swap-options').classList.add('hidden');
-        document.getElementById('swap-course').innerHTML = '<option value="">請選擇要互換的課程</option>';
+
+        // 重置調課相關欄位
+        const swapDate = document.getElementById('swap-date');
+        if (swapDate) swapDate.value = '';
+        const swapDateHint = document.getElementById('swap-date-hint');
+        if (swapDateHint) swapDateHint.textContent = '';
+        const swapSlotAInfo = document.getElementById('swap-slot-a-info');
+        if (swapSlotAInfo) swapSlotAInfo.innerHTML = '';
+
+        document.getElementById('swap-course').innerHTML = '<option value="">請先選擇時段 B 日期</option>';
         document.getElementById('swap-validation-error').classList.add('hidden');
         document.getElementById('swap-preview').classList.add('hidden');
 

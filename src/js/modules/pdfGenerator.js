@@ -168,7 +168,15 @@ export class PDFGenerator {
         // 根據是否為調課生成不同的基本資訊表格
         let infoTableHTML;
         if (isSwap) {
-            // 調課模式：顯示兩個時段的互換資訊
+            // 格式化時段 A 和 B 的日期
+            const dateAObj = new Date(record.date);
+            const formattedDateA = `${dateAObj.getFullYear()}/${String(dateAObj.getMonth() + 1).padStart(2, '0')}/${String(dateAObj.getDate()).padStart(2, '0')}`;
+
+            // 時段 B 日期（新增欄位）
+            const dateBObj = record.swapDate ? new Date(record.swapDate) : dateAObj;
+            const formattedDateB = `${dateBObj.getFullYear()}/${String(dateBObj.getMonth() + 1).padStart(2, '0')}/${String(dateBObj.getDate()).padStart(2, '0')}`;
+
+            // 調課模式：顯示兩個時段的互換資訊（包含各自日期）
             infoTableHTML = `
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">
                 <tr>
@@ -179,13 +187,13 @@ export class PDFGenerator {
                 </tr>
                 <tr>
                     <td style="padding: 8px; border: 1px solid #333; background: #dbeafe; font-weight: bold;">時段 A</td>
-                    <td style="padding: 8px; border: 1px solid #333;">${record.weekday} ${record.period}</td>
+                    <td style="padding: 8px; border: 1px solid #333;"><strong>${formattedDateA}</strong><br>${record.weekday} ${record.period}</td>
                     <td style="padding: 8px; border: 1px solid #333; background: #dbeafe; font-weight: bold;">課程</td>
                     <td style="padding: 8px; border: 1px solid #333;">${record.originalTeacher}（${record.subject}）</td>
                 </tr>
                 <tr>
                     <td style="padding: 8px; border: 1px solid #333; background: #fef3c7; font-weight: bold;">時段 B</td>
-                    <td style="padding: 8px; border: 1px solid #333;">${record.swapWeekday || ''} ${record.swapPeriod || ''}</td>
+                    <td style="padding: 8px; border: 1px solid #333;"><strong>${formattedDateB}</strong><br>${record.swapWeekday || ''} ${record.swapPeriod || ''}</td>
                     <td style="padding: 8px; border: 1px solid #333; background: #fef3c7; font-weight: bold;">課程</td>
                     <td style="padding: 8px; border: 1px solid #333;">${record.swapTeacher || ''}（${record.swapSubject || ''}）</td>
                 </tr>
