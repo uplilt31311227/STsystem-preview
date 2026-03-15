@@ -2121,9 +2121,13 @@ class SubstituteTeacherApp {
         document.getElementById('record-start-date').value = today.substring(0, 8) + '01';
         document.getElementById('record-end-date').value = today;
 
-        // 設定預設月份
-        const currentMonth = new Date().getMonth() + 1;
-        document.getElementById('settle-month').value = currentMonth;
+        // 設定預設月份為上個月
+        const now = new Date();
+        let lastMonth = now.getMonth(); // getMonth() 是 0-11，所以當月減1就是上個月的 1-12 表示
+        if (lastMonth === 0) {
+            lastMonth = 12; // 如果是1月，上個月是12月
+        }
+        document.getElementById('settle-month').value = lastMonth;
     }
 
     /**
