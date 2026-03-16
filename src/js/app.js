@@ -1187,19 +1187,81 @@ class SubstituteTeacherApp {
     }
 
     /**
+     * 滾動到指定元素並高亮提示
+     * @param {string|HTMLElement} elementOrId - 元素或元素 ID
+     * @param {string} message - 提示訊息
+     */
+    scrollToAndHighlight(elementOrId, message) {
+        const element = typeof elementOrId === 'string'
+            ? document.getElementById(elementOrId)
+            : elementOrId;
+
+        if (!element) return;
+
+        // 滾動到元素位置
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // 聚焦（如果可聚焦）
+        if (element.focus) {
+            setTimeout(() => element.focus(), 300);
+        }
+
+        // 高亮效果
+        element.style.transition = 'box-shadow 0.3s ease';
+        element.style.boxShadow = '0 0 0 3px #ef4444, 0 0 10px rgba(239, 68, 68, 0.5)';
+
+        // 3 秒後移除高亮
+        setTimeout(() => {
+            element.style.boxShadow = '';
+        }, 3000);
+
+        // 顯示提示
+        alert(message);
+    }
+
+    /**
      * 確認調課/代課
      */
     async confirmSubstitute() {
-        if (!this.selectedCourse) {
-            alert('請選擇要調課的課程');
+        const changeType = document.getElementById('change-type').value;
+
+        // ===== 步驟一驗證：教師與日期 =====
+        const teacher = document.getElementById('sub-teacher').value;
+        if (!teacher) {
+            this.scrollToAndHighlight('sub-teacher', '請選擇原任課教師');
             return;
         }
 
-        const changeType = document.getElementById('change-type').value;
         const date = document.getElementById('sub-date').value;
-
         if (!date) {
-            alert('請選擇調課日期');
+            this.scrollToAndHighlight('sub-date', '請選擇調代課日期');
+            return;
+        }
+
+        // ===== 步驟二驗證：異動類型與假別 =====
+        if (changeType === 'substitute') {
+            const leaveType = document.getElementById('leave-type').value;
+            if (!leaveType) {
+                this.scrollToAndHighlight('leave-type', '請選擇假別');
+                return;
+            }
+
+            // 公付假別必須填寫字號/證明
+            const paidLeaveTypes = ['official', 'longsick', 'funeral'];
+            if (paidLeaveTypes.includes(leaveType)) {
+                const docNumber = document.getElementById('doc-number').value.trim();
+                if (!docNumber) {
+                    const fieldName = leaveType === 'official' ? '公假字號' :
+                                      leaveType === 'longsick' ? '核准文號' : '喪假證明';
+                    this.scrollToAndHighlight('doc-number', `${this.getLeaveTypeName(leaveType)}必須填寫${fieldName}`);
+                    return;
+                }
+            }
+        }
+
+        // ===== 步驟三驗證：選擇課程 =====
+        if (!this.selectedCourse) {
+            this.scrollToAndHighlight('original-schedule-grid', '請從課表中選擇要調代課的課程');
             return;
         }
 
@@ -1225,39 +1287,22 @@ class SubstituteTeacherApp {
             if (confirm(confirmMsg)) {
                 document.getElementById('sub-date').value = suggestedDate;
                 this.showDateAdjustmentHint(courseWeekday, suggestedDate);
-                return; // 讓用戶確認調整後的日期
+                return;
             } else {
-                return; // 用戶取消，不繼續
+                return;
             }
         }
 
-        // 根據異動類型進行驗證
+        // ===== 步驟四驗證：代課教師或互換課程 =====
         if (changeType === 'substitute') {
-            // 代課模式驗證
+            // 代課模式：驗證代課教師
             if (!this.selectedSubstitute) {
-                alert('請選擇代課教師');
+                this.scrollToAndHighlight('recommendation-list', '請選擇代課教師');
                 return;
             }
 
             const leaveType = document.getElementById('leave-type').value;
-            if (!leaveType) {
-                alert('請選擇假別');
-                return;
-            }
-
-            // 公付假別必須填寫字號/證明
             const paidLeaveTypes = ['official', 'longsick', 'funeral'];
-            if (paidLeaveTypes.includes(leaveType)) {
-                const docNumber = document.getElementById('doc-number').value.trim();
-                if (!docNumber) {
-                    const fieldName = leaveType === 'official' ? '公假字號' :
-                                      leaveType === 'longsick' ? '核准文號' : '喪假證明';
-                    alert(`${this.getLeaveTypeName(leaveType)}必須填寫${fieldName}`);
-                    document.getElementById('doc-number').focus();
-                    return;
-                }
-            }
-
             const reason = document.getElementById('sub-reason').value.trim();
 
             // 建立代課紀錄
@@ -1286,24 +1331,24 @@ class SubstituteTeacherApp {
             // 調課模式驗證
             const swapDate = document.getElementById('swap-date').value;
             if (!swapDate) {
-                alert('請選擇時段 B 日期');
+                this.scrollToAndHighlight('swap-date', '請選擇時段 B 日期');
                 return;
             }
 
             const swapCourseId = document.getElementById('swap-course').value;
             if (!swapCourseId) {
-                alert('請選擇要互換的課程');
+                this.scrollToAndHighlight('swap-course', '請選擇要互換的課程');
                 return;
             }
 
             // 驗證已選擇互換課程
             if (!this.selectedSwapCourse) {
-                alert('調課驗證失敗：請重新選擇互換課程');
+                this.scrollToAndHighlight('swap-course', '調課驗證失敗：請重新選擇互換課程');
                 return;
             }
 
             if (this.selectedSwapCourse.className !== this.selectedCourse.className) {
-                alert('調課錯誤：課程班級不相同，無法調課！');
+                this.scrollToAndHighlight('swap-course', '調課錯誤：課程班級不相同，無法調課！');
                 return;
             }
 
@@ -1311,7 +1356,7 @@ class SubstituteTeacherApp {
             const swapWeekday = this.selectedSwapCourse.weekday;
             const swapDateWeekday = this.getDateWeekday(swapDate);
             if (swapDateWeekday !== swapWeekday) {
-                alert(`時段 B 日期錯誤！\n\n選擇的課程是「${swapWeekday}」的課\n但選擇的日期是「${swapDateWeekday}」`);
+                this.scrollToAndHighlight('swap-date', `時段 B 日期錯誤！\n\n選擇的課程是「${swapWeekday}」的課\n但選擇的日期是「${swapDateWeekday}」`);
                 return;
             }
 
