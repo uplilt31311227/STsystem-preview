@@ -505,11 +505,39 @@
 
                 <div class="card">
                     <h2>資料管理</h2>
-                    <p class="description">管理本機儲存的資料</p>
+                    <p class="description">管理本機儲存的資料（課表、教師、調代課紀錄）</p>
 
-                    <div class="action-buttons">
-                        <button class="btn btn-secondary" id="export-local-data-btn">匯出本機資料</button>
-                        <button class="btn btn-danger" id="clear-local-data-btn">清除所有資料</button>
+                    <div class="data-management-section">
+                        <h3>匯出備份</h3>
+                        <p class="hint">將所有資料匯出為 JSON 檔案，可用於備份或轉移至其他裝置</p>
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" id="export-local-data-btn">匯出完整備份</button>
+                        </div>
+                    </div>
+
+                    <div class="data-management-section">
+                        <h3>匯入還原</h3>
+                        <p class="hint">從備份檔案還原資料，將會覆蓋目前的所有資料</p>
+                        <div class="import-area">
+                            <input type="file" id="import-data-file" accept=".json" style="display: none;">
+                            <button class="btn btn-primary" id="import-local-data-btn">選擇備份檔案</button>
+                            <span class="import-filename" id="import-filename"></span>
+                        </div>
+                        <div id="import-preview" class="import-preview hidden">
+                            <h4>檔案內容預覽</h4>
+                            <div class="import-stats" id="import-stats"></div>
+                            <div class="import-actions">
+                                <button class="btn btn-primary" id="confirm-import-btn">確認匯入</button>
+                                <button class="btn btn-secondary" id="cancel-import-btn">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-management-section danger-zone">
+                        <h3>危險操作</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-danger" id="clear-local-data-btn">清除所有資料</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -517,7 +545,7 @@
 
         <!-- 底部資訊 -->
         <footer class="footer">
-            <p>國中調代課自動化系統 v1.3.1 | 適用於人力資源網2.0匯出之課表</p>
+            <p>國中調代課自動化系統 v1.3.2 | 適用於人力資源網2.0匯出之課表</p>
         </footer>
     </div>
 

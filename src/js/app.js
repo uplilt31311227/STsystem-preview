@@ -2109,6 +2109,26 @@ class SubstituteTeacherApp {
         document.getElementById('clear-local-data-btn')?.addEventListener('click', () => {
             this.clearLocalData();
         });
+
+        // 匯入資料按鈕
+        document.getElementById('import-local-data-btn')?.addEventListener('click', () => {
+            document.getElementById('import-data-file').click();
+        });
+
+        // 匯入檔案選擇
+        document.getElementById('import-data-file')?.addEventListener('change', (e) => {
+            this.handleImportFile(e.target.files[0]);
+        });
+
+        // 確認匯入按鈕
+        document.getElementById('confirm-import-btn')?.addEventListener('click', () => {
+            this.confirmImport();
+        });
+
+        // 取消匯入按鈕
+        document.getElementById('cancel-import-btn')?.addEventListener('click', () => {
+            this.cancelImport();
+        });
     }
 
     /**
@@ -2150,6 +2170,124 @@ class SubstituteTeacherApp {
                 location.reload();
             }
         }
+    }
+
+    /**
+     * 處理匯入檔案
+     * @param {File} file - 選擇的檔案
+     */
+    handleImportFile(file) {
+        if (!file) return;
+
+        // 檢查檔案類型
+        if (!file.name.endsWith('.json')) {
+            alert('請選擇 JSON 格式的備份檔案');
+            return;
+        }
+
+        // 顯示檔案名稱
+        document.getElementById('import-filename').textContent = file.name;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                this.validateAndPreviewImport(data);
+            } catch (error) {
+                alert('檔案格式錯誤，無法解析 JSON');
+                this.cancelImport();
+            }
+        };
+        reader.onerror = () => {
+            alert('檔案讀取失敗');
+            this.cancelImport();
+        };
+        reader.readAsText(file);
+    }
+
+    /**
+     * 驗證並預覽匯入資料
+     * @param {Object} data - 匯入的資料
+     */
+    validateAndPreviewImport(data) {
+        // 驗證資料結構
+        const requiredFields = ['scheduleData', 'teachers', 'classes', 'substituteRecords'];
+        const missingFields = requiredFields.filter(field => !data.hasOwnProperty(field));
+
+        if (missingFields.length > 0) {
+            alert(`備份檔案格式不正確，缺少欄位：${missingFields.join(', ')}`);
+            this.cancelImport();
+            return;
+        }
+
+        // 儲存待匯入的資料
+        this.pendingImportData = data;
+
+        // 顯示預覽
+        const statsHtml = `
+            <div class="import-stat-item">
+                <span class="label">學校名稱</span>
+                <span class="value">${data.schoolName || '（未設定）'}</span>
+            </div>
+            <div class="import-stat-item">
+                <span class="label">課表資料</span>
+                <span class="value">${data.scheduleData?.length || 0} 筆</span>
+            </div>
+            <div class="import-stat-item">
+                <span class="label">教師數量</span>
+                <span class="value">${data.teachers?.length || 0} 位</span>
+            </div>
+            <div class="import-stat-item">
+                <span class="label">班級數量</span>
+                <span class="value">${data.classes?.length || 0} 班</span>
+            </div>
+            <div class="import-stat-item">
+                <span class="label">調代課紀錄</span>
+                <span class="value">${data.substituteRecords?.length || 0} 筆</span>
+            </div>
+        `;
+
+        document.getElementById('import-stats').innerHTML = statsHtml;
+        document.getElementById('import-preview').classList.remove('hidden');
+    }
+
+    /**
+     * 確認匯入資料
+     */
+    confirmImport() {
+        if (!this.pendingImportData) {
+            alert('沒有待匯入的資料');
+            return;
+        }
+
+        if (!confirm('確定要匯入資料嗎？\n\n此操作將覆蓋目前的所有資料（課表、教師、調代課紀錄）。\n\n建議先匯出目前的資料作為備份。')) {
+            return;
+        }
+
+        try {
+            // 載入資料到 DataManager
+            this.dataManager.loadFromStorage(this.pendingImportData);
+
+            // 儲存到 localStorage
+            this.saveData();
+
+            // 重新整理頁面顯示
+            alert('資料匯入成功！頁面將重新載入以套用變更。');
+            location.reload();
+        } catch (error) {
+            console.error('匯入失敗:', error);
+            alert('匯入失敗：' + error.message);
+        }
+    }
+
+    /**
+     * 取消匯入
+     */
+    cancelImport() {
+        this.pendingImportData = null;
+        document.getElementById('import-data-file').value = '';
+        document.getElementById('import-filename').textContent = '';
+        document.getElementById('import-preview').classList.add('hidden');
     }
 
     /**
