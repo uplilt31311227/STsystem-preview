@@ -352,7 +352,7 @@ export class PDFGenerator {
         const slotBBg = '#e0e0e0';  // 時段 B 網底（淺灰）
 
         this.periods.forEach((period, index) => {
-            let row = `<td style="padding: 6px 4px; border: 1px solid #333; font-weight: bold; text-align: center; width: 50px; background: #f5f5f5;">${period}</td>`;
+            let row = `<td style="padding: 10px 6px; border: 1px solid #333; font-weight: bold; text-align: center; width: 60px; background: #f5f5f5; font-size: 13px;">${period}</td>`;
 
             this.weekdays.forEach(weekday => {
                 // 檢查是否為本次異動的節次（時段 A）
@@ -368,30 +368,30 @@ export class PDFGenerator {
                         ? `原 ${record.originalTeacher}<br>調 ${record.swapTeacher}`
                         : `原 ${record.originalTeacher}<br>代 ${record.substituteTeacher}`;
                     row += `<td style="
-                        padding: 3px 2px;
+                        padding: 8px 4px;
                         border: 1px solid #333;
                         text-align: center;
                         background: ${slotABg};
                         font-weight: bold;
-                        font-size: 9px;
-                        line-height: 1.3;
+                        font-size: 12px;
+                        line-height: 1.4;
                     ">${classInfo}<br>${teacherInfo}</td>`;
                 } else if (isSlotB) {
                     // 時段 B：淺灰色網底標記（調課時的另一時段）
                     // 顯示格式：班級/科目 + 原 OOO / 調 OOO（三行）
                     const classInfoB = `${record.className} ${record.swapSubject || record.subject}`;
                     row += `<td style="
-                        padding: 3px 2px;
+                        padding: 8px 4px;
                         border: 1px solid #333;
                         text-align: center;
                         background: ${slotBBg};
                         font-weight: bold;
-                        font-size: 9px;
-                        line-height: 1.3;
+                        font-size: 12px;
+                        line-height: 1.4;
                     ">${classInfoB}<br>原 ${record.swapTeacher}<br>調 ${record.originalTeacher}</td>`;
                 } else {
                     // 其他節次留空
-                    row += `<td style="padding: 6px 4px; border: 1px solid #333; height: 35px;"></td>`;
+                    row += `<td style="padding: 10px 6px; border: 1px solid #333; height: 45px;"></td>`;
                 }
             });
 
@@ -402,29 +402,29 @@ export class PDFGenerator {
                 tableRows += `
                 <tr>
                     <td colspan="6" style="
-                        padding: 4px;
+                        padding: 6px;
                         border: 1px solid #333;
                         text-align: center;
                         background: #888;
                         color: white;
-                        font-size: 10px;
+                        font-size: 12px;
                         font-weight: bold;
-                        letter-spacing: 2px;
+                        letter-spacing: 3px;
                     ">午 休</td>
                 </tr>`;
             }
         });
 
         return `
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
             <thead>
                 <tr style="background: #333; color: white;">
-                    <th style="padding: 6px 4px; border: 1px solid #333; width: 50px;">節次</th>
-                    <th style="padding: 6px 4px; border: 1px solid #333;">週一</th>
-                    <th style="padding: 6px 4px; border: 1px solid #333;">週二</th>
-                    <th style="padding: 6px 4px; border: 1px solid #333;">週三</th>
-                    <th style="padding: 6px 4px; border: 1px solid #333;">週四</th>
-                    <th style="padding: 6px 4px; border: 1px solid #333;">週五</th>
+                    <th style="padding: 10px 6px; border: 1px solid #333; width: 60px; font-size: 14px;">節次</th>
+                    <th style="padding: 10px 6px; border: 1px solid #333; font-size: 14px;">週一</th>
+                    <th style="padding: 10px 6px; border: 1px solid #333; font-size: 14px;">週二</th>
+                    <th style="padding: 10px 6px; border: 1px solid #333; font-size: 14px;">週三</th>
+                    <th style="padding: 10px 6px; border: 1px solid #333; font-size: 14px;">週四</th>
+                    <th style="padding: 10px 6px; border: 1px solid #333; font-size: 14px;">週五</th>
                 </tr>
             </thead>
             <tbody>
