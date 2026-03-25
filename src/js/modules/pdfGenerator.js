@@ -362,31 +362,33 @@ export class PDFGenerator {
 
                 if (isSlotA) {
                     // 時段 A：深灰色網底標記
-                    // 顯示格式：原 OOO / 代 OOO（上下兩行）
-                    const cellContent = isSwap
+                    // 顯示格式：班級/科目 + 原 OOO / 代 OOO（三行）
+                    const classInfo = `${record.className} ${record.subject}`;
+                    const teacherInfo = isSwap
                         ? `原 ${record.originalTeacher}<br>調 ${record.swapTeacher}`
                         : `原 ${record.originalTeacher}<br>代 ${record.substituteTeacher}`;
                     row += `<td style="
-                        padding: 4px 2px;
+                        padding: 3px 2px;
                         border: 1px solid #333;
                         text-align: center;
                         background: ${slotABg};
                         font-weight: bold;
-                        font-size: 10px;
-                        line-height: 1.4;
-                    ">${cellContent}</td>`;
+                        font-size: 9px;
+                        line-height: 1.3;
+                    ">${classInfo}<br>${teacherInfo}</td>`;
                 } else if (isSlotB) {
                     // 時段 B：淺灰色網底標記（調課時的另一時段）
-                    // 顯示格式：原 OOO / 調 OOO（上下兩行）
+                    // 顯示格式：班級/科目 + 原 OOO / 調 OOO（三行）
+                    const classInfoB = `${record.className} ${record.swapSubject || record.subject}`;
                     row += `<td style="
-                        padding: 4px 2px;
+                        padding: 3px 2px;
                         border: 1px solid #333;
                         text-align: center;
                         background: ${slotBBg};
                         font-weight: bold;
-                        font-size: 10px;
-                        line-height: 1.4;
-                    ">原 ${record.swapTeacher}<br>調 ${record.originalTeacher}</td>`;
+                        font-size: 9px;
+                        line-height: 1.3;
+                    ">${classInfoB}<br>原 ${record.swapTeacher}<br>調 ${record.originalTeacher}</td>`;
                 } else {
                     // 其他節次留空
                     row += `<td style="padding: 6px 4px; border: 1px solid #333; height: 35px;"></td>`;
