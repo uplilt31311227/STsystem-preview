@@ -1557,6 +1557,29 @@ body {
     color: var(--primary-hover);
 }
 
+/* 合併確認對話框樣式 */
+.merge-data-summary {
+    background-color: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.merge-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.merge-summary-item:not(:last-child) {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.merge-icon {
+    font-size: 1.25rem;
+}
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;

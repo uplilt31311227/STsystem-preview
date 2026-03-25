@@ -150,6 +150,20 @@ class SubstituteTeacherApp {
         syncConflictModal?.addEventListener('click', (e) => {
             if (e.target === syncConflictModal) this.hideSyncConflictModal();
         });
+
+        // 合併確認對話框事件
+        const mergeDataBtn = document.getElementById('merge-data-btn');
+        mergeDataBtn?.addEventListener('click', () => this.handleMergeChoice('merge'));
+
+        const useCloudDataBtn = document.getElementById('use-cloud-data-btn');
+        useCloudDataBtn?.addEventListener('click', () => this.handleMergeChoice('cloud'));
+
+        // 點擊 modal 外部不關閉（強制選擇）
+        const mergeConfirmModal = document.getElementById('merge-confirm-modal');
+        mergeConfirmModal?.addEventListener('click', (e) => {
+            // 不允許點擊外部關閉，必須選擇一個選項
+            e.stopPropagation();
+        });
     }
 
     /**
@@ -260,45 +274,154 @@ class SubstituteTeacherApp {
 
         try {
             const syncStatus = await this.dataManager.checkInitialSyncStatus();
+            const localData = syncStatus.localData;
+            const cloudData = syncStatus.cloudData;
 
-            switch (syncStatus.action) {
-                case 'upload':
-                    // 本機資料較新或雲端沒資料，上傳
-                    await this.dataManager.syncToCloud();
-                    break;
+            // 取得本地和雲端的學校名稱
+            const localSchoolName = localData?.schoolName || '';
+            const cloudSchoolName = cloudData?.schoolName || '';
 
-                case 'download':
-                    // 雲端資料較新，下載
-                    this.dataManager.loadFromCloud(syncStatus.cloudData);
-                    // 更新 UI
-                    this.refreshUIAfterSync();
-                    // 儲存到 localStorage
-                    this.saveDataToStorage();
-                    break;
+            // 檢查本地是否有課表資料
+            const hasLocalSchedule = (localData?.scheduleData?.length || 0) > 0;
+            const hasCloudSchedule = (cloudData?.scheduleData?.length || 0) > 0;
 
-                case 'conflict':
-                    // 顯示衝突對話框
-                    this.showSyncConflictModal(syncStatus.localData, syncStatus.cloudData);
-                    break;
-
-                case 'none':
-                    // 不需要同步
-                    break;
-            }
-
-            // 啟用即時同步
-            this.dataManager.enableRealtimeSync();
-
-            // 監聽資料變更，自動同步
-            this.dataManager.onDataChange(async () => {
-                if (isSignedIn()) {
+            // 如果雲端沒有資料，直接上傳本地資料
+            if (!cloudData || !hasCloudSchedule) {
+                if (hasLocalSchedule) {
                     await this.dataManager.syncToCloud();
                 }
-            });
+                this.enableRealtimeSyncAndListen();
+                return;
+            }
+
+            // 如果本地沒有資料，直接下載雲端資料
+            if (!hasLocalSchedule) {
+                this.dataManager.loadFromCloud(cloudData);
+                this.refreshUIAfterSync();
+                this.saveDataToStorage();
+                this.enableRealtimeSyncAndListen();
+                return;
+            }
+
+            // 兩邊都有資料，比較學校名稱
+            if (localSchoolName && cloudSchoolName && localSchoolName !== cloudSchoolName) {
+                // 學校名稱不同：清除本地資料，載入雲端資料
+                this.showSchoolMismatchNotification(localSchoolName, cloudSchoolName);
+                this.dataManager.clearAll();
+                this.dataManager.loadFromCloud(cloudData);
+                this.refreshUIAfterSync();
+                this.saveDataToStorage();
+            } else if (localSchoolName === cloudSchoolName || !localSchoolName || !cloudSchoolName) {
+                // 學校名稱相同（或其中一方沒有學校名稱）：詢問是否合併
+                this.showMergeConfirmModal(localData, cloudData);
+                return; // 等待用戶選擇後再啟用即時同步
+            }
+
+            this.enableRealtimeSyncAndListen();
 
         } catch (error) {
             console.error('同步檢查失敗:', error);
         }
+    }
+
+    /**
+     * 啟用即時同步並監聽變更
+     */
+    enableRealtimeSyncAndListen() {
+        // 啟用即時同步
+        this.dataManager.enableRealtimeSync();
+
+        // 監聽資料變更，自動同步
+        this.dataManager.onDataChange(async () => {
+            if (isSignedIn()) {
+                await this.dataManager.syncToCloud();
+            }
+        });
+    }
+
+    /**
+     * 顯示學校不同的通知
+     */
+    showSchoolMismatchNotification(localSchool, cloudSchool) {
+        alert(`偵測到不同學校的資料：\n\n本機：${localSchool}\n雲端：${cloudSchool}\n\n已自動載入雲端資料（${cloudSchool}）。`);
+    }
+
+    /**
+     * 顯示合併確認對話框（學校相同時）
+     */
+    showMergeConfirmModal(localData, cloudData) {
+        const modal = document.getElementById('merge-confirm-modal');
+        if (!modal) {
+            // 如果沒有對話框，使用 confirm
+            const localRecords = localData?.substituteRecords?.length || 0;
+            const cloudRecords = cloudData?.substituteRecords?.length || 0;
+            const schoolName = localData?.schoolName || cloudData?.schoolName || '未設定';
+
+            const shouldMerge = confirm(
+                `偵測到本機和雲端都有「${schoolName}」的資料：\n\n` +
+                `本機：${localRecords} 筆調代課紀錄\n` +
+                `雲端：${cloudRecords} 筆調代課紀錄\n\n` +
+                `是否要合併資料？\n\n` +
+                `【確定】合併兩邊資料\n` +
+                `【取消】使用雲端資料（清除本機）`
+            );
+
+            if (shouldMerge) {
+                // 合併資料
+                this.dataManager.mergeWithCloudData(cloudData);
+                this.refreshUIAfterSync();
+                this.saveDataToStorage();
+                this.dataManager.syncToCloud();
+            } else {
+                // 使用雲端資料
+                this.dataManager.clearAll();
+                this.dataManager.loadFromCloud(cloudData);
+                this.refreshUIAfterSync();
+                this.saveDataToStorage();
+            }
+
+            this.enableRealtimeSyncAndListen();
+            return;
+        }
+
+        // 更新對話框內容
+        const schoolName = localData?.schoolName || cloudData?.schoolName || '未設定';
+        document.getElementById('merge-school-name').textContent = schoolName;
+        document.getElementById('merge-local-record-count').textContent =
+            localData?.substituteRecords?.length || 0;
+        document.getElementById('merge-cloud-record-count').textContent =
+            cloudData?.substituteRecords?.length || 0;
+
+        // 儲存資料供後續使用
+        this.pendingMergeData = { localData, cloudData };
+
+        modal.classList.remove('hidden');
+    }
+
+    /**
+     * 處理合併選擇
+     */
+    handleMergeChoice(choice) {
+        const modal = document.getElementById('merge-confirm-modal');
+        const { localData, cloudData } = this.pendingMergeData || {};
+
+        if (choice === 'merge') {
+            // 合併資料
+            this.dataManager.mergeWithCloudData(cloudData);
+            this.refreshUIAfterSync();
+            this.saveDataToStorage();
+            this.dataManager.syncToCloud();
+        } else if (choice === 'cloud') {
+            // 使用雲端資料
+            this.dataManager.clearAll();
+            this.dataManager.loadFromCloud(cloudData);
+            this.refreshUIAfterSync();
+            this.saveDataToStorage();
+        }
+
+        modal?.classList.add('hidden');
+        this.pendingMergeData = null;
+        this.enableRealtimeSyncAndListen();
     }
 
     /**
@@ -1470,6 +1593,9 @@ class SubstituteTeacherApp {
             originalTeacher: teacherName
         };
 
+        // 檢查該課堂是否已有調代課紀錄（衝堂檢查）
+        this.checkAndShowExistingRecordWarning(date, this.selectedCourse);
+
         // 更新選中課程資訊顯示
         document.getElementById('sel-class').textContent = this.selectedCourse.className;
         document.getElementById('sel-period').textContent = `${this.selectedCourse.weekday} ${this.selectedCourse.period}`;
@@ -1488,6 +1614,74 @@ class SubstituteTeacherApp {
         } else {
             // 代課模式：計算並顯示推薦代課教師
             this.showRecommendations();
+        }
+    }
+
+    /**
+     * 檢查並顯示已存在調代課紀錄的警告
+     * @param {string} date - 選擇的日期
+     * @param {Object} course - 選擇的課程
+     */
+    checkAndShowExistingRecordWarning(date, course) {
+        // 移除先前的警告訊息
+        const existingWarning = document.getElementById('existing-record-warning');
+        if (existingWarning) {
+            existingWarning.remove();
+        }
+
+        // 檢查是否已有紀錄
+        const existingRecord = this.dataManager.checkExistingRecord(
+            date,
+            course.period,
+            course.className,
+            course.originalTeacher
+        );
+
+        if (existingRecord) {
+            // 建立警告訊息
+            const warningDiv = document.createElement('div');
+            warningDiv.id = 'existing-record-warning';
+            warningDiv.style.cssText = `
+                background: #fef2f2;
+                border: 1px solid #fecaca;
+                border-radius: 8px;
+                padding: 12px 16px;
+                margin-top: 12px;
+                color: #991b1b;
+            `;
+
+            const recordType = existingRecord.type || '代課';
+            const substituteInfo = existingRecord.type === '調課'
+                ? `調課教師：${existingRecord.swapTeacher || existingRecord.substituteTeacher}`
+                : `代課教師：${existingRecord.substituteTeacher}`;
+
+            warningDiv.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <span style="font-size: 18px;">⚠️</span>
+                    <div>
+                        <div style="font-weight: bold; margin-bottom: 4px;">此課堂已有調代課紀錄</div>
+                        <div style="font-size: 13px; color: #7f1d1d;">
+                            ${existingRecord.date} ${existingRecord.weekday} ${existingRecord.period}<br>
+                            ${existingRecord.className} ${existingRecord.subject}（${recordType}）<br>
+                            ${substituteInfo}
+                        </div>
+                        <div style="font-size: 12px; margin-top: 8px; color: #b91c1c;">
+                            如需重新安排，請先至「調代課紀錄」刪除該筆紀錄
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 插入到選擇課程資訊區塊後面
+            const selectedCourseInfo = document.getElementById('selected-course-info');
+            if (selectedCourseInfo) {
+                selectedCourseInfo.appendChild(warningDiv);
+            }
+
+            // 標記有衝堂紀錄
+            this.hasExistingRecord = true;
+        } else {
+            this.hasExistingRecord = false;
         }
     }
 
@@ -1632,6 +1826,28 @@ class SubstituteTeacherApp {
         // ===== 步驟三驗證：選擇課程 =====
         if (!this.selectedCourse) {
             this.scrollToAndHighlight('original-schedule-grid', '請從課表中選擇要調代課的課程');
+            return;
+        }
+
+        // 檢查該課堂是否已有調代課紀錄（衝堂檢查）
+        const existingRecord = this.dataManager.checkExistingRecord(
+            date,
+            this.selectedCourse.period,
+            this.selectedCourse.className,
+            this.selectedCourse.originalTeacher
+        );
+
+        if (existingRecord) {
+            const recordType = existingRecord.type || '代課';
+            const substituteInfo = existingRecord.type === '調課'
+                ? `調課教師：${existingRecord.swapTeacher || existingRecord.substituteTeacher}`
+                : `代課教師：${existingRecord.substituteTeacher}`;
+
+            alert(`此課堂已有調代課紀錄，無法重複申請！\n\n` +
+                `${existingRecord.date} ${existingRecord.weekday} ${existingRecord.period}\n` +
+                `${existingRecord.className} ${existingRecord.subject}（${recordType}）\n` +
+                `${substituteInfo}\n\n` +
+                `如需重新安排，請先至「調代課紀錄」刪除該筆紀錄。`);
             return;
         }
 

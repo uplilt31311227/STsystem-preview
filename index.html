@@ -558,6 +558,42 @@
                     </div>
                 </div>
 
+                <!-- 合併確認對話框（學校相同時） -->
+                <div id="merge-confirm-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>資料同步確認</h3>
+                        </div>
+                        <div class="modal-body">
+                            <p class="conflict-description">
+                                偵測到本機和雲端都有「<strong id="merge-school-name">-</strong>」的資料：
+                            </p>
+
+                            <div class="merge-data-summary">
+                                <div class="merge-summary-item">
+                                    <span class="merge-icon">💻</span>
+                                    <span>本機：<strong id="merge-local-record-count">0</strong> 筆調代課紀錄</span>
+                                </div>
+                                <div class="merge-summary-item">
+                                    <span class="merge-icon">☁️</span>
+                                    <span>雲端：<strong id="merge-cloud-record-count">0</strong> 筆調代課紀錄</span>
+                                </div>
+                            </div>
+
+                            <p style="margin-top: 1rem; color: #666;">請選擇要如何處理這些資料：</p>
+
+                            <div class="modal-actions" style="flex-direction: column; gap: 0.75rem;">
+                                <button class="btn btn-primary" id="merge-data-btn" style="width: 100%;">
+                                    🔀 合併資料（保留兩邊所有紀錄）
+                                </button>
+                                <button class="btn btn-secondary" id="use-cloud-data-btn" style="width: 100%;">
+                                    ☁️ 使用雲端資料（清除本機）
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <h2>資料管理</h2>
                     <p class="description">管理本機儲存的資料（課表、教師、調代課紀錄）</p>
