@@ -220,12 +220,29 @@ export class DataManager {
     getSubstituteRecords(startDate = '', endDate = '', teacherFilter = '') {
         let records = [...this.substituteRecords];
 
+        console.log('查詢調代課紀錄:', {
+            總紀錄數: this.substituteRecords.length,
+            startDate,
+            endDate,
+            teacherFilter
+        });
+
         if (startDate) {
-            records = records.filter(r => r.date >= startDate);
+            // 確保日期格式一致（YYYY-MM-DD）
+            const normalizedStart = this.normalizeDate(startDate);
+            records = records.filter(r => {
+                const recordDate = this.normalizeDate(r.date);
+                return recordDate >= normalizedStart;
+            });
         }
 
         if (endDate) {
-            records = records.filter(r => r.date <= endDate);
+            // 確保日期格式一致（YYYY-MM-DD）
+            const normalizedEnd = this.normalizeDate(endDate);
+            records = records.filter(r => {
+                const recordDate = this.normalizeDate(r.date);
+                return recordDate <= normalizedEnd;
+            });
         }
 
         if (teacherFilter) {
@@ -235,10 +252,25 @@ export class DataManager {
             );
         }
 
+        console.log('篩選後紀錄數:', records.length);
+
         // 按日期排序
         records.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         return records;
+    }
+
+    /**
+     * 標準化日期格式為 YYYY-MM-DD
+     * @param {string} dateStr - 日期字串
+     * @returns {string} 標準化後的日期
+     */
+    normalizeDate(dateStr) {
+        if (!dateStr) return '';
+        // 處理可能的各種日期格式
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        return date.toISOString().split('T')[0];
     }
 
     /**
