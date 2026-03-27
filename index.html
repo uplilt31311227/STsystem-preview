@@ -223,13 +223,35 @@
 
                 <!-- 步驟三：選擇課程 -->
                 <div id="step-select-course" class="card hidden">
-                    <h2>步驟三：選擇課程</h2>
+                    <div class="step-header-with-toggle">
+                        <h2>步驟三：選擇課程</h2>
+                        <!-- 多節課模式切換 -->
+                        <label class="multi-course-toggle">
+                            <input type="checkbox" id="multi-course-mode">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">多節課模式</span>
+                        </label>
+                    </div>
                     <p class="hint" id="schedule-hint">點擊要調課的課程（僅顯示 <span id="selected-weekday"></span> 的課程）</p>
+                    <p class="hint multi-course-hint hidden" id="multi-course-hint">
+                        <span class="hint-icon">💡</span> 多節課模式：可點擊選擇多節課程，再次點擊可取消選擇
+                    </p>
 
                     <!-- 原任課教師週課表 -->
                     <div id="original-schedule">
                         <div class="schedule-grid" id="original-schedule-grid">
                             <!-- 動態生成週課表 -->
+                        </div>
+                    </div>
+
+                    <!-- 已選課程列表（多節課模式） -->
+                    <div id="selected-courses-list" class="selected-courses-container hidden">
+                        <div class="selected-courses-header">
+                            <span class="selected-count">已選擇 <strong id="selected-course-count">0</strong> 節課</span>
+                            <button class="btn btn-sm btn-secondary" id="clear-all-courses-btn">清除全部</button>
+                        </div>
+                        <div class="selected-courses-chips" id="selected-courses-chips">
+                            <!-- 動態生成已選課程標籤 -->
                         </div>
                     </div>
                 </div>
@@ -238,8 +260,8 @@
                 <div id="selected-course-info" class="card hidden">
                     <h2>步驟四：確認調代課資訊</h2>
 
-                    <!-- 選中課程摘要 -->
-                    <div class="selected-course-summary">
+                    <!-- 單節課摘要（原有） -->
+                    <div class="selected-course-summary" id="single-course-summary">
                         <div class="summary-item">
                             <span class="summary-label">班級</span>
                             <span class="summary-value" id="sel-class"></span>
@@ -255,6 +277,32 @@
                         <div class="summary-item">
                             <span class="summary-label">原任課教師</span>
                             <span class="summary-value" id="sel-original-teacher"></span>
+                        </div>
+                    </div>
+
+                    <!-- 多節課摘要（新增） -->
+                    <div class="multi-course-summary hidden" id="multi-course-summary">
+                        <div class="multi-course-header">
+                            <span class="multi-course-icon">📚</span>
+                            <span>共 <strong id="confirm-course-count">0</strong> 節課需要代課</span>
+                        </div>
+                        <div class="multi-course-table-wrapper">
+                            <table class="multi-course-table">
+                                <thead>
+                                    <tr>
+                                        <th>節次</th>
+                                        <th>班級</th>
+                                        <th>科目</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="multi-course-tbody">
+                                    <!-- 動態生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="multi-course-teacher">
+                            <span class="summary-label">原任課教師</span>
+                            <span class="summary-value" id="sel-original-teacher-multi"></span>
                         </div>
                     </div>
 
@@ -636,12 +684,12 @@
 
         <!-- 底部資訊 -->
         <footer class="footer">
-            <p>國中調代課自動化系統 v1.5.0 | 適用於人力資源網2.0匯出之課表</p>
+            <p>國中調代課自動化系統 v1.6.0 | 適用於人力資源網2.0匯出之課表</p>
             <p class="credit">內湖國中 藍奕麟老師 with Claude Code 製作</p>
         </footer>
     </div>
 
     <!-- 載入 JavaScript 模組 -->
-    <script type="module" src="src/js/app.js?v=1.5.0"></script>
+    <script type="module" src="src/js/app.js?v=1.6.0"></script>
 </body>
 </html>

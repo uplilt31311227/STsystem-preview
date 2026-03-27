@@ -1685,3 +1685,283 @@ body {
         padding: 0.75rem;
     }
 }
+
+/* ============================================
+   多節課模式樣式
+   ============================================ */
+
+/* 步驟標題與切換按鈕容器 */
+.step-header-with-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.step-header-with-toggle h2 {
+    margin-bottom: 0;
+}
+
+/* 多節課模式切換開關 */
+.multi-course-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.multi-course-toggle input {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    background-color: #cbd5e1;
+    border-radius: 13px;
+    transition: all 0.3s ease;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.multi-course-toggle input:checked + .toggle-slider {
+    background-color: var(--primary-color);
+}
+
+.multi-course-toggle input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.multi-course-toggle input:checked ~ .toggle-label {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* 多節課提示 */
+.multi-course-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    color: #1e40af;
+}
+
+.hint-icon {
+    font-size: 1.1rem;
+}
+
+/* 已選課程列表容器 */
+.selected-courses-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+}
+
+.selected-courses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.selected-count {
+    font-size: 0.95rem;
+    color: #0369a1;
+}
+
+.selected-count strong {
+    font-size: 1.1rem;
+    color: #0c4a6e;
+}
+
+/* 已選課程標籤（chips） */
+.selected-courses-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.course-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background-color: white;
+    border: 1px solid #0ea5e9;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: #0369a1;
+    transition: all 0.2s ease;
+}
+
+.course-chip:hover {
+    background-color: #e0f2fe;
+}
+
+.course-chip .chip-text {
+    font-weight: 500;
+}
+
+.course-chip .chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    color: #64748b;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.course-chip .chip-remove:hover {
+    background-color: #fecaca;
+    color: #dc2626;
+}
+
+/* 多選模式下的課程格子樣式 */
+.schedule-course.multi-selected {
+    background-color: #0ea5e9 !important;
+    color: white !important;
+    border: 2px solid #0284c7 !important;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);
+    position: relative;
+}
+
+.schedule-course.multi-selected::before {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+.schedule-course.multi-selected .course-subject {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* 多節課摘要樣式 */
+.multi-course-summary {
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.multi-course-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    color: #0369a1;
+    margin-bottom: 0.75rem;
+}
+
+.multi-course-icon {
+    font-size: 1.25rem;
+}
+
+.multi-course-table-wrapper {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 0.75rem;
+}
+
+.multi-course-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.multi-course-table th {
+    background-color: #0284c7;
+    color: white;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+}
+
+.multi-course-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e0f2fe;
+    background-color: white;
+}
+
+.multi-course-table tr:hover td {
+    background-color: #f0f9ff;
+}
+
+.multi-course-teacher {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #bae6fd;
+}
+
+.multi-course-teacher .summary-label {
+    font-weight: 500;
+    color: #64748b;
+}
+
+.multi-course-teacher .summary-value {
+    font-weight: 600;
+    color: #0c4a6e;
+}
+
+/* 小按鈕樣式 */
+.btn-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+/* 響應式調整 */
+@media (max-width: 600px) {
+    .step-header-with-toggle {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .multi-course-toggle {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .selected-courses-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}

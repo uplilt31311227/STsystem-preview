@@ -254,6 +254,23 @@ export class DataManager {
     }
 
     /**
+     * 檢查該課堂是否已有調代課紀錄（衝堂檢查）
+     * @param {string} date - 日期
+     * @param {string} period - 節次
+     * @param {string} className - 班級
+     * @param {string} originalTeacher - 原任課教師
+     * @returns {Object|null} 若有衝堂則回傳該紀錄，否則回傳 null
+     */
+    checkExistingRecord(date, period, className, originalTeacher) {
+        return this.substituteRecords.find(record =>
+            record.date === date &&
+            record.period === period &&
+            record.className === className &&
+            record.originalTeacher === originalTeacher
+        ) || null;
+    }
+
+    /**
      * 計算教師每週基本授課時數
      * @param {string} teacherName - 教師姓名
      * @returns {number} 每週授課節數

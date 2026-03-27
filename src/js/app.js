@@ -50,6 +50,10 @@ class SubstituteTeacherApp {
         this.selectedCourse = null;
         this.selectedSubstitute = null;
 
+        // 多節課模式相關
+        this.isMultiCourseMode = false;
+        this.selectedCourses = [];  // 多選課程陣列
+
         // 初始化應用程式
         this.init();
     }
@@ -1054,6 +1058,16 @@ class SubstituteTeacherApp {
         document.getElementById('cancel-substitute-btn').addEventListener('click', () => {
             this.cancelSubstitute();
         });
+
+        // 多節課模式切換
+        document.getElementById('multi-course-mode')?.addEventListener('change', (e) => {
+            this.onMultiCourseModeToggle(e.target.checked);
+        });
+
+        // 清除全部已選課程按鈕
+        document.getElementById('clear-all-courses-btn')?.addEventListener('click', () => {
+            this.clearAllSelectedCourses();
+        });
     }
 
     /**
@@ -1088,6 +1102,7 @@ class SubstituteTeacherApp {
         this.selectedCourse = null;
         this.selectedSubstitute = null;
         this.selectedSwapCourse = null;
+        this.selectedCourses = [];  // 重置多選課程
 
         // 重置異動類型為代課
         const substituteRadio = document.querySelector('input[name="change-type-radio"][value="substitute"]');
@@ -1574,17 +1589,11 @@ class SubstituteTeacherApp {
             return;
         }
 
-        // 移除其他選中狀態
-        document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
-
-        // 選中當前課程
-        cell.classList.add('selected');
-
-        // 取得課程資訊
         const teacherName = document.getElementById('sub-teacher').value;
         const date = document.getElementById('sub-date').value;
 
-        this.selectedCourse = {
+        // 取得課程資訊
+        const courseInfo = {
             weekday: cell.dataset.weekday,
             period: cell.dataset.period,
             className: cell.dataset.class,
@@ -1593,14 +1602,39 @@ class SubstituteTeacherApp {
             originalTeacher: teacherName
         };
 
+        // 根據模式處理選擇
+        if (this.isMultiCourseMode) {
+            // 多選模式
+            this.handleMultiCourseSelection(cell, courseInfo, date);
+        } else {
+            // 單選模式（原有邏輯）
+            this.handleSingleCourseSelection(cell, courseInfo, date);
+        }
+    }
+
+    /**
+     * 處理單選模式的課程選擇
+     */
+    handleSingleCourseSelection(cell, courseInfo, date) {
+        // 移除其他選中狀態
+        document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.schedule-course.multi-selected').forEach(c => c.classList.remove('multi-selected'));
+
+        // 選中當前課程
+        cell.classList.add('selected');
+
+        this.selectedCourse = courseInfo;
+
         // 檢查該課堂是否已有調代課紀錄（衝堂檢查）
         this.checkAndShowExistingRecordWarning(date, this.selectedCourse);
 
-        // 更新選中課程資訊顯示
+        // 更新選中課程資訊顯示（單節課摘要）
+        document.getElementById('single-course-summary').classList.remove('hidden');
+        document.getElementById('multi-course-summary').classList.add('hidden');
         document.getElementById('sel-class').textContent = this.selectedCourse.className;
         document.getElementById('sel-period').textContent = `${this.selectedCourse.weekday} ${this.selectedCourse.period}`;
         document.getElementById('sel-subject').textContent = this.selectedCourse.subject;
-        document.getElementById('sel-original-teacher').textContent = teacherName;
+        document.getElementById('sel-original-teacher').textContent = courseInfo.originalTeacher;
 
         // 顯示步驟四：確認資訊
         document.getElementById('selected-course-info').classList.remove('hidden');
@@ -1615,6 +1649,211 @@ class SubstituteTeacherApp {
             // 代課模式：計算並顯示推薦代課教師
             this.showRecommendations();
         }
+    }
+
+    /**
+     * 處理多選模式的課程選擇
+     */
+    handleMultiCourseSelection(cell, courseInfo, date) {
+        // 檢查課程是否已被選中
+        const courseKey = `${courseInfo.weekday}_${courseInfo.period}_${courseInfo.className}`;
+        const existingIndex = this.selectedCourses.findIndex(c =>
+            `${c.weekday}_${c.period}_${c.className}` === courseKey
+        );
+
+        if (existingIndex >= 0) {
+            // 已選中，取消選擇
+            this.selectedCourses.splice(existingIndex, 1);
+            cell.classList.remove('multi-selected');
+        } else {
+            // 未選中，檢查衝堂後加入
+            if (typeof this.dataManager?.checkExistingRecord === 'function') {
+                const existingRecord = this.dataManager.checkExistingRecord(
+                    date,
+                    courseInfo.period,
+                    courseInfo.className,
+                    courseInfo.originalTeacher
+                );
+                if (existingRecord) {
+                    alert(`此課堂（${courseInfo.period} ${courseInfo.className}）已有調代課紀錄，無法選擇！`);
+                    return;
+                }
+            }
+            this.selectedCourses.push(courseInfo);
+            cell.classList.add('multi-selected');
+        }
+
+        // 更新已選課程列表 UI
+        this.updateSelectedCoursesUI();
+
+        // 如果有選中的課程，顯示步驟四
+        if (this.selectedCourses.length > 0) {
+            this.selectedCourse = this.selectedCourses[0];  // 用於相容性
+            document.getElementById('selected-course-info').classList.remove('hidden');
+
+            // 顯示多節課摘要，隱藏單節課摘要
+            document.getElementById('single-course-summary').classList.add('hidden');
+            document.getElementById('multi-course-summary').classList.remove('hidden');
+
+            // 更新多節課確認資訊
+            this.updateMultiCourseSummary();
+
+            // 代課模式：顯示推薦（基於第一節課）
+            const changeType = document.getElementById('change-type').value;
+            if (changeType !== 'swap') {
+                this.showRecommendations();
+            }
+        } else {
+            document.getElementById('selected-course-info').classList.add('hidden');
+        }
+    }
+
+    /**
+     * 更新已選課程列表 UI
+     */
+    updateSelectedCoursesUI() {
+        const container = document.getElementById('selected-courses-list');
+        const chipsContainer = document.getElementById('selected-courses-chips');
+        const countElement = document.getElementById('selected-course-count');
+
+        if (this.selectedCourses.length === 0) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        container.classList.remove('hidden');
+        countElement.textContent = this.selectedCourses.length;
+
+        // 生成課程標籤
+        chipsContainer.innerHTML = this.selectedCourses.map((course, index) => `
+            <div class="course-chip" data-index="${index}">
+                <span class="chip-text">${course.period} ${course.className} ${course.subject}</span>
+                <span class="chip-remove" data-index="${index}" title="移除">×</span>
+            </div>
+        `).join('');
+
+        // 綁定移除按鈕事件
+        chipsContainer.querySelectorAll('.chip-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(e.target.dataset.index);
+                this.removeCourseFromSelection(index);
+            });
+        });
+    }
+
+    /**
+     * 從多選中移除課程
+     */
+    removeCourseFromSelection(index) {
+        if (index < 0 || index >= this.selectedCourses.length) return;
+
+        const course = this.selectedCourses[index];
+        this.selectedCourses.splice(index, 1);
+
+        // 移除對應格子的選中狀態
+        const grid = document.getElementById('original-schedule-grid');
+        const cell = grid.querySelector(`.schedule-course[data-weekday="${course.weekday}"][data-period="${course.period}"][data-class="${course.className}"]`);
+        if (cell) {
+            cell.classList.remove('multi-selected');
+        }
+
+        // 更新 UI
+        this.updateSelectedCoursesUI();
+
+        if (this.selectedCourses.length > 0) {
+            this.selectedCourse = this.selectedCourses[0];
+            this.updateMultiCourseSummary();
+        } else {
+            this.selectedCourse = null;
+            document.getElementById('selected-course-info').classList.add('hidden');
+        }
+    }
+
+    /**
+     * 清除所有已選課程
+     */
+    clearAllSelectedCourses() {
+        this.selectedCourses = [];
+        this.selectedCourse = null;
+
+        // 移除所有選中狀態
+        document.querySelectorAll('.schedule-course.multi-selected').forEach(c => {
+            c.classList.remove('multi-selected');
+        });
+
+        // 更新 UI
+        this.updateSelectedCoursesUI();
+        document.getElementById('selected-course-info').classList.add('hidden');
+    }
+
+    /**
+     * 更新多節課摘要顯示
+     */
+    updateMultiCourseSummary() {
+        const tbody = document.getElementById('multi-course-tbody');
+        const countElement = document.getElementById('confirm-course-count');
+        const teacherElement = document.getElementById('sel-original-teacher-multi');
+
+        countElement.textContent = this.selectedCourses.length;
+        teacherElement.textContent = this.selectedCourses[0]?.originalTeacher || '';
+
+        // 按節次排序
+        const sortedCourses = [...this.selectedCourses].sort((a, b) => {
+            const periodOrder = ['第一節', '第二節', '第三節', '第四節', '第五節', '第六節', '第七節'];
+            return periodOrder.indexOf(a.period) - periodOrder.indexOf(b.period);
+        });
+
+        tbody.innerHTML = sortedCourses.map(course => `
+            <tr>
+                <td>${course.weekday} ${course.period}</td>
+                <td>${course.className}</td>
+                <td>${course.subject}</td>
+            </tr>
+        `).join('');
+    }
+
+    /**
+     * 多節課模式切換
+     */
+    onMultiCourseModeToggle(enabled) {
+        this.isMultiCourseMode = enabled;
+
+        // 更新提示顯示
+        const hint = document.getElementById('multi-course-hint');
+        if (hint) {
+            hint.classList.toggle('hidden', !enabled);
+        }
+
+        // 多選模式下隱藏調課選項（多節課只支援代課）
+        if (enabled) {
+            // 強制切換到代課模式
+            const substituteRadio = document.querySelector('input[name="change-type-radio"][value="substitute"]');
+            if (substituteRadio) {
+                substituteRadio.checked = true;
+                this.onChangeTypeSelected('substitute');
+                document.getElementById('change-type').value = 'substitute';
+            }
+            // 禁用調課選項
+            const swapRadio = document.querySelector('input[name="change-type-radio"][value="swap"]');
+            if (swapRadio) {
+                swapRadio.disabled = true;
+                swapRadio.closest('.change-type-option').style.opacity = '0.5';
+                swapRadio.closest('.change-type-option').title = '多節課模式不支援調課';
+            }
+        } else {
+            // 啟用調課選項
+            const swapRadio = document.querySelector('input[name="change-type-radio"][value="swap"]');
+            if (swapRadio) {
+                swapRadio.disabled = false;
+                swapRadio.closest('.change-type-option').style.opacity = '1';
+                swapRadio.closest('.change-type-option').title = '';
+            }
+        }
+
+        // 清除之前的選擇
+        this.clearAllSelectedCourses();
+        document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
     }
 
     /**
@@ -1846,6 +2085,13 @@ class SubstituteTeacherApp {
         }
 
         // ===== 步驟三驗證：選擇課程 =====
+        // 多節課模式
+        if (this.isMultiCourseMode && this.selectedCourses.length > 0) {
+            await this.confirmMultiCourseSubstitute(date, changeType);
+            return;
+        }
+
+        // 單節課模式
         if (!this.selectedCourse) {
             this.scrollToAndHighlight('original-schedule-grid', '請從課表中選擇要調代課的課程');
             return;
@@ -2002,6 +2248,77 @@ class SubstituteTeacherApp {
             // 儲存並處理
             await this.saveAndProcessRecord(record);
         }
+    }
+
+    /**
+     * 確認多節課代課
+     */
+    async confirmMultiCourseSubstitute(date, changeType) {
+        // 驗證代課教師
+        if (!this.selectedSubstitute) {
+            this.scrollToAndHighlight('recommendation-list', '請選擇代課教師');
+            return;
+        }
+
+        const leaveType = document.getElementById('leave-type').value;
+        const paidLeaveTypes = ['official', 'longsick', 'funeral'];
+        const reason = document.getElementById('sub-reason').value.trim();
+
+        // 驗證所有課程的星期是否與日期相符
+        const dateWeekday = this.getDateWeekday(date);
+        const mismatchCourses = this.selectedCourses.filter(c => c.weekday !== dateWeekday);
+        if (mismatchCourses.length > 0) {
+            const mismatchList = mismatchCourses.map(c => `${c.period}（${c.weekday}）`).join('、');
+            alert(`以下課程的星期與日期不符：\n${mismatchList}\n\n選擇的日期是「${dateWeekday}」，請重新選擇課程或調整日期。`);
+            return;
+        }
+
+        // 按節次排序
+        const sortedCourses = [...this.selectedCourses].sort((a, b) => {
+            const periodOrder = ['第一節', '第二節', '第三節', '第四節', '第五節', '第六節', '第七節'];
+            return periodOrder.indexOf(a.period) - periodOrder.indexOf(b.period);
+        });
+
+        // 建立多節課紀錄（使用相同的基礎 ID）
+        const baseId = Date.now().toString();
+        const records = sortedCourses.map((course, index) => ({
+            id: `${baseId}_${index}`,
+            type: '代課',
+            date: date,
+            weekday: course.weekday,
+            period: course.period,
+            className: course.className,
+            subject: course.subject,
+            domain: course.domain,
+            originalTeacher: course.originalTeacher,
+            substituteTeacher: this.selectedSubstitute.teacher.name,
+            leaveType: this.getLeaveTypeName(leaveType),
+            leaveTypeName: this.getLeaveTypeName(leaveType),
+            docNumber: paidLeaveTypes.includes(leaveType) ? document.getElementById('doc-number').value.trim() : '',
+            reason: reason,
+            createdAt: new Date().toISOString(),
+            // 多節課標記
+            isMultiCourse: true,
+            multiCourseGroupId: baseId,
+            multiCourseIndex: index,
+            multiCourseTotal: sortedCourses.length
+        }));
+
+        // 儲存所有紀錄
+        for (const record of records) {
+            this.dataManager.addSubstituteRecord(record);
+        }
+        this.saveDataToStorage();
+
+        // 生成多節課 PDF（一次性）
+        await this.generateMultiCoursePDF(records, sortedCourses);
+
+        // 完全重置流程
+        this.resetSubstituteFlow();
+
+        // 顯示結果
+        const syncText = isSignedIn() ? '並同步到雲端' : '';
+        alert(`已完成 ${records.length} 節課的代課申請${syncText}，PDF 已生成`);
     }
 
     /**
@@ -2301,7 +2618,38 @@ class SubstituteTeacherApp {
 
         // 清除課程選擇狀態
         document.querySelectorAll('.schedule-course.selected').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.schedule-course.multi-selected').forEach(c => c.classList.remove('multi-selected'));
         document.querySelectorAll('.recommendation-item.selected').forEach(i => i.classList.remove('selected'));
+
+        // 重置多節課模式
+        this.selectedCourses = [];
+        this.isMultiCourseMode = false;
+        const multiCourseToggle = document.getElementById('multi-course-mode');
+        if (multiCourseToggle) {
+            multiCourseToggle.checked = false;
+        }
+        const multiCourseHint = document.getElementById('multi-course-hint');
+        if (multiCourseHint) {
+            multiCourseHint.classList.add('hidden');
+        }
+        const selectedCoursesList = document.getElementById('selected-courses-list');
+        if (selectedCoursesList) {
+            selectedCoursesList.classList.add('hidden');
+        }
+
+        // 重置摘要顯示
+        const singleSummary = document.getElementById('single-course-summary');
+        const multiSummary = document.getElementById('multi-course-summary');
+        if (singleSummary) singleSummary.classList.remove('hidden');
+        if (multiSummary) multiSummary.classList.add('hidden');
+
+        // 重新啟用調課選項
+        const swapRadio = document.querySelector('input[name="change-type-radio"][value="swap"]');
+        if (swapRadio) {
+            swapRadio.disabled = false;
+            swapRadio.closest('.change-type-option').style.opacity = '1';
+            swapRadio.closest('.change-type-option').title = '';
+        }
     }
 
     /**
@@ -2312,6 +2660,19 @@ class SubstituteTeacherApp {
         const teachers = this.dataManager.getTeachers();
 
         await this.pdfGenerator.generateSubstituteForm(record, scheduleData, teachers);
+    }
+
+    /**
+     * 生成多節課代課單 PDF
+     * @param {Array} records - 多節課紀錄陣列
+     * @param {Array} courses - 排序後的課程陣列
+     */
+    async generateMultiCoursePDF(records, courses) {
+        const scheduleData = this.dataManager.getScheduleData();
+        const teachers = this.dataManager.getTeachers();
+
+        // 使用 PDF 生成器的多節課方法
+        await this.pdfGenerator.generateMultiCourseForm(records, courses, scheduleData, teachers);
     }
 
     /**
