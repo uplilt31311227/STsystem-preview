@@ -954,8 +954,9 @@ class SubstituteTeacherApp {
                 <td>
                     <input type="text" value="${teacher.domains.join(', ')}"
                            data-index="${index}" data-field="domains"
-                           class="teacher-input" readonly
-                           title="領域由課表自動偵測">
+                           class="teacher-input"
+                           title="多個領域請用逗號分隔，例如：國文, 英語"
+                           placeholder="例如：國文, 英語">
                 </td>
                 <td>
                     <select data-index="${index}" data-field="homeroomClass" class="teacher-input">
@@ -994,7 +995,11 @@ class SubstituteTeacherApp {
     handleTeacherDataChange(e) {
         const index = parseInt(e.target.dataset.index);
         const field = e.target.dataset.field;
-        const value = e.target.value;
+        let value = e.target.value;
+
+        if (field === 'domains') {
+            value = value.split(/[,，]/).map(d => d.trim()).filter(d => d);
+        }
 
         this.dataManager.updateTeacher(index, field, value);
         this.saveDataToStorage();
@@ -1391,6 +1396,11 @@ class SubstituteTeacherApp {
         const weekdayB = courseB.weekday;
         const periodB = courseB.period;
 
+        // 同一教師調動自己的課務，不會產生衝堂
+        if (teacherA === teacherB) {
+            return null;
+        }
+
         // 檢查 A 老師在時段 B 是否有其他課（排除目標課程的班級）
         const teacherAConflict = scheduleData.find(course =>
             course.teacher === teacherA &&
@@ -1492,7 +1502,9 @@ class SubstituteTeacherApp {
                 </tr>
             </table>
             <p style="margin: 10px 0 0 0; color: #0369a1; font-size: 13px;">
-                ✓ ${originalCourse.className} 的 ${originalCourse.originalTeacher} 與 ${swapCourse.teacher} 互換課程時段，雙方總時數不變
+                ${originalCourse.originalTeacher === swapCourse.teacher
+                    ? `✓ ${originalCourse.className} 的 ${originalCourse.originalTeacher} 自行調動課程時段，科目互換`
+                    : `✓ ${originalCourse.className} 的 ${originalCourse.originalTeacher} 與 ${swapCourse.teacher} 互換課程時段，雙方總時數不變`}
             </p>
         `;
         swapPreview.classList.remove('hidden');
@@ -1924,7 +1936,7 @@ class SubstituteTeacherApp {
 
             const recordType = existingRecord.type || '代課';
             const substituteInfo = existingRecord.type === '調課'
-                ? `調課教師：${existingRecord.swapTeacher || existingRecord.substituteTeacher}`
+                ? (existingRecord.isSelfSwap ? `教師自行調課` : `調課教師：${existingRecord.swapTeacher || existingRecord.substituteTeacher}`)
                 : `代課教師：${existingRecord.substituteTeacher}`;
 
             warningDiv.innerHTML = `
@@ -2132,7 +2144,7 @@ class SubstituteTeacherApp {
         if (existingRecord) {
             const recordType = existingRecord.type || '代課';
             const substituteInfo = existingRecord.type === '調課'
-                ? `調課教師：${existingRecord.swapTeacher || existingRecord.substituteTeacher}`
+                ? (existingRecord.isSelfSwap ? `教師自行調課` : `調課教師：${existingRecord.swapTeacher || existingRecord.substituteTeacher}`)
                 : `代課教師：${existingRecord.substituteTeacher}`;
 
             alert(`此課堂已有調代課紀錄，無法重複申請！\n\n` +
@@ -2262,7 +2274,10 @@ class SubstituteTeacherApp {
                 leaveType: '調課',
                 leaveTypeName: '調課',
                 docNumber: '',
-                reason: `時段A(${date}) ${this.selectedCourse.weekday}${this.selectedCourse.period} ↔ 時段B(${swapDate}) ${this.selectedSwapCourse.weekday}${this.selectedSwapCourse.period} 課程互換`,
+                isSelfSwap: this.selectedCourse.originalTeacher === this.selectedSwapCourse.teacher,
+                reason: this.selectedCourse.originalTeacher === this.selectedSwapCourse.teacher
+                    ? `${this.selectedCourse.originalTeacher} 自行調課：時段A(${date}) ${this.selectedCourse.weekday}${this.selectedCourse.period} ${this.selectedCourse.subject} ↔ 時段B(${swapDate}) ${this.selectedSwapCourse.weekday}${this.selectedSwapCourse.period} ${this.selectedSwapCourse.subject}`
+                    : `時段A(${date}) ${this.selectedCourse.weekday}${this.selectedCourse.period} ↔ 時段B(${swapDate}) ${this.selectedSwapCourse.weekday}${this.selectedSwapCourse.period} 課程互換`,
                 createdAt: new Date().toISOString()
             };
 
@@ -2738,7 +2753,7 @@ class SubstituteTeacherApp {
                     <td>${record.weekday} ${record.period}</td>
                     <td>${record.subject}</td>
                     <td>${record.originalTeacher}</td>
-                    <td>${record.substituteTeacher}</td>
+                    <td>${record.isSelfSwap ? '自行調課' : record.substituteTeacher}</td>
                     <td>${leaveTypeName}</td>
                     <td>
                         <button class="btn btn-sm btn-more detail-btn" data-id="${record.id}">更多</button>
@@ -2820,8 +2835,8 @@ class SubstituteTeacherApp {
                 <span class="detail-value">${record.originalTeacher}</span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">代課教師</span>
-                <span class="detail-value">${record.substituteTeacher}</span>
+                <span class="detail-label">${record.isSelfSwap ? '調課方式' : '代課教師'}</span>
+                <span class="detail-value">${record.isSelfSwap ? '教師自行調課' : record.substituteTeacher}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">假別</span>

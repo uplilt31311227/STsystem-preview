@@ -526,7 +526,9 @@ export class PDFGenerator {
                 </tr>
                 <tr>
                     <td style="padding: 8px; border: 1px solid #333; background: ${normalBg}; font-weight: bold;">調課說明</td>
-                    <td colspan="3" style="padding: 8px; border: 1px solid #333;">A、B 時段課程互換，兩位教師總時數不變</td>
+                    <td colspan="3" style="padding: 8px; border: 1px solid #333;">${record.isSelfSwap
+                        ? `${record.originalTeacher} 自行調動課程，A、B 時段科目互換`
+                        : 'A、B 時段課程互換，兩位教師總時數不變'}</td>
                 </tr>
             </table>`;
         } else {
@@ -669,7 +671,9 @@ export class PDFGenerator {
                     const dateAStr = `${dateA.getMonth() + 1}/${dateA.getDate()}`;
                     const classInfo = `${record.className} ${record.subject}`;
                     const teacherInfo = isSwap
-                        ? `原 ${record.originalTeacher}<br>調 ${record.swapTeacher}`
+                        ? (record.isSelfSwap
+                            ? `${record.originalTeacher}<br>→ ${record.swapSubject || ''}`
+                            : `原 ${record.originalTeacher}<br>調 ${record.swapTeacher}`)
                         : `原 ${record.originalTeacher}<br>代 ${record.substituteTeacher}`;
                     row += `<td style="
                         padding: 8px 4px;
@@ -694,7 +698,9 @@ export class PDFGenerator {
                         font-weight: bold;
                         font-size: 12px;
                         line-height: 1.4;
-                    ">${dateBStr}<br>${classInfoB}<br>原 ${record.swapTeacher}<br>調 ${record.originalTeacher}</td>`;
+                    ">${dateBStr}<br>${classInfoB}<br>${record.isSelfSwap
+                        ? `${record.originalTeacher}<br>→ ${record.subject || ''}`
+                        : `原 ${record.swapTeacher}<br>調 ${record.originalTeacher}`}</td>`;
                 } else {
                     // 其他節次留空
                     row += `<td style="padding: 10px 6px; border: 1px solid #333; height: 45px;"></td>`;
