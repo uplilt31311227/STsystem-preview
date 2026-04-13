@@ -3624,7 +3624,7 @@ class SubstituteTeacherApp {
             this.dataManager.loadFromStorage(this.pendingImportData);
 
             // 儲存到 localStorage
-            this.saveData();
+            this.saveDataToStorage();
 
             // 重新整理頁面顯示
             alert('資料匯入成功！頁面將重新載入以套用變更。');
