@@ -541,6 +541,42 @@ body {
     margin-top: 1rem;
 }
 
+/* 課表匯入頁籤 - 備份還原區塊 */
+.backup-restore-card {
+    margin-top: 0.75rem;
+}
+
+.backup-restore-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+}
+
+.import-preview-compact {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.75rem;
+}
+
+.import-preview-compact h4 {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.import-stats-compact {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    margin-bottom: 0.6rem;
+}
+
+.import-stats-compact .import-stat-item {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.import-preview-compact .import-actions {
+    margin-top: 0.5rem;
+}
+
 /* 資料表格樣式 */
 .data-table {
     width: 100%;

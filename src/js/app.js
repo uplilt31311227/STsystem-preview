@@ -3463,33 +3463,74 @@ class SubstituteTeacherApp {
      * 綁定資料管理事件
      */
     bindDataManagementEvents() {
-        // 匯出本機資料按鈕
+        // 匯入上下文元素對應表
+        this._importContexts = {
+            settings: {
+                file: 'import-data-file',
+                filename: 'import-filename',
+                preview: 'import-preview',
+                stats: 'import-stats',
+            },
+            tab: {
+                file: 'tab-import-file',
+                filename: 'tab-import-filename',
+                preview: 'tab-import-preview',
+                stats: 'tab-import-stats',
+            }
+        };
+        this._activeImportCtx = 'settings';
+
+        // === 設定頁匯入匯出 ===
         document.getElementById('export-local-data-btn')?.addEventListener('click', () => {
             this.exportLocalData();
         });
 
-        // 清除所有資料按鈕
         document.getElementById('clear-local-data-btn')?.addEventListener('click', () => {
             this.clearLocalData();
         });
 
-        // 匯入資料按鈕
         document.getElementById('import-local-data-btn')?.addEventListener('click', () => {
+            this._activeImportCtx = 'settings';
             document.getElementById('import-data-file').click();
         });
 
-        // 匯入檔案選擇
         document.getElementById('import-data-file')?.addEventListener('change', (e) => {
+            this._activeImportCtx = 'settings';
             this.handleImportFile(e.target.files[0]);
         });
 
-        // 確認匯入按鈕
         document.getElementById('confirm-import-btn')?.addEventListener('click', () => {
+            this._activeImportCtx = 'settings';
             this.confirmImport();
         });
 
-        // 取消匯入按鈕
         document.getElementById('cancel-import-btn')?.addEventListener('click', () => {
+            this._activeImportCtx = 'settings';
+            this.cancelImport();
+        });
+
+        // === 課表匯入頁籤的備份還原 ===
+        document.getElementById('tab-export-btn')?.addEventListener('click', () => {
+            this.exportLocalData();
+        });
+
+        document.getElementById('tab-import-btn')?.addEventListener('click', () => {
+            this._activeImportCtx = 'tab';
+            document.getElementById('tab-import-file').click();
+        });
+
+        document.getElementById('tab-import-file')?.addEventListener('change', (e) => {
+            this._activeImportCtx = 'tab';
+            this.handleImportFile(e.target.files[0]);
+        });
+
+        document.getElementById('tab-confirm-import-btn')?.addEventListener('click', () => {
+            this._activeImportCtx = 'tab';
+            this.confirmImport();
+        });
+
+        document.getElementById('tab-cancel-import-btn')?.addEventListener('click', () => {
+            this._activeImportCtx = 'tab';
             this.cancelImport();
         });
     }
@@ -3534,6 +3575,8 @@ class SubstituteTeacherApp {
     handleImportFile(file) {
         if (!file) return;
 
+        const ctx = this._importContexts[this._activeImportCtx];
+
         // 檢查檔案類型
         if (!file.name.endsWith('.json')) {
             this.showToast('請選擇 JSON 格式的備份檔案', 'error');
@@ -3541,7 +3584,7 @@ class SubstituteTeacherApp {
         }
 
         // 顯示檔案名稱
-        document.getElementById('import-filename').textContent = file.name;
+        document.getElementById(ctx.filename).textContent = file.name;
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -3602,8 +3645,9 @@ class SubstituteTeacherApp {
             </div>
         `;
 
-        document.getElementById('import-stats').innerHTML = statsHtml;
-        document.getElementById('import-preview').classList.remove('hidden');
+        const ctx = this._importContexts[this._activeImportCtx];
+        document.getElementById(ctx.stats).innerHTML = statsHtml;
+        document.getElementById(ctx.preview).classList.remove('hidden');
     }
 
     /**
@@ -3640,9 +3684,15 @@ class SubstituteTeacherApp {
      */
     cancelImport() {
         this.pendingImportData = null;
-        document.getElementById('import-data-file').value = '';
-        document.getElementById('import-filename').textContent = '';
-        document.getElementById('import-preview').classList.add('hidden');
+        // 重置兩個上下文的 UI
+        for (const ctx of Object.values(this._importContexts)) {
+            const fileEl = document.getElementById(ctx.file);
+            if (fileEl) fileEl.value = '';
+            const fnEl = document.getElementById(ctx.filename);
+            if (fnEl) fnEl.textContent = '';
+            const prevEl = document.getElementById(ctx.preview);
+            if (prevEl) prevEl.classList.add('hidden');
+        }
     }
 
     // ===================================

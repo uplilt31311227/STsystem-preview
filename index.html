@@ -106,6 +106,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- 資料備份還原 -->
+                        <div class="card compact-card backup-restore-card">
+                            <h3>資料備份還原</h3>
+                            <div class="backup-restore-row">
+                                <button class="btn btn-secondary btn-sm" id="tab-export-btn">匯出備份</button>
+                                <button class="btn btn-primary btn-sm" id="tab-import-btn">匯入還原</button>
+                                <input type="file" id="tab-import-file" accept=".json" style="display: none;">
+                            </div>
+                            <span class="import-filename" id="tab-import-filename"></span>
+                            <div id="tab-import-preview" class="import-preview import-preview-compact hidden">
+                                <h4>檔案內容預覽</h4>
+                                <div class="import-stats import-stats-compact" id="tab-import-stats"></div>
+                                <div class="import-actions">
+                                    <button class="btn btn-primary btn-sm" id="tab-confirm-import-btn">確認匯入</button>
+                                    <button class="btn btn-secondary btn-sm" id="tab-cancel-import-btn">取消</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 右側：教師屬性 -->
