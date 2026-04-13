@@ -1387,15 +1387,30 @@ class SubstituteTeacherApp {
             options += `<option value="${courseId}">${course.period} - ${course.teacher}（${course.subject}）</option>`;
         });
 
-        // 衝堂的課程（顯示為禁用）
-        conflictCourses.forEach(({ course, conflict }) => {
-            const courseId = `${course.weekday}_${course.period}_${course.teacher}`;
-            options += `<option value="${courseId}" disabled style="color: #999;">⚠ ${course.period} - ${course.teacher}（${course.subject}）- ${conflict}</option>`;
-        });
+        // 衝堂的課程
+        if (this.isMultiSwapMode) {
+            // 多重調課模式：不禁用，顯示警告但仍可選取，衝突在整批送出時檢查
+            conflictCourses.forEach(({ course, conflict }) => {
+                const courseId = `${course.weekday}_${course.period}_${course.teacher}`;
+                options += `<option value="${courseId}" style="color: #b45309;">⚠ ${course.period} - ${course.teacher}（${course.subject}）- ${conflict}</option>`;
+            });
+        } else {
+            // 單次調課模式：禁用衝堂課程
+            conflictCourses.forEach(({ course, conflict }) => {
+                const courseId = `${course.weekday}_${course.period}_${course.teacher}`;
+                options += `<option value="${courseId}" disabled style="color: #999;">⚠ ${course.period} - ${course.teacher}（${course.subject}）- ${conflict}</option>`;
+            });
+        }
 
         swapCourseSelect.innerHTML = options;
 
-        if (eligibleCourses.length > 0) {
+        if (this.isMultiSwapMode) {
+            // 多重調課模式：所有課程皆可選取，衝突整批檢查
+            const totalCourses = eligibleCourses.length + conflictCourses.length;
+            swapHint.innerHTML = `✓ ${swapWeekday} ${targetClass} 有 ${totalCourses} 堂可互換課程` +
+                (conflictCourses.length > 0 ? `<br><span style="color: #b45309;">⚠ ${conflictCourses.length} 堂有潛在衝堂，加入批次後將於送出時整批檢查</span>` : '');
+            swapHint.style.color = '#16a34a';
+        } else if (eligibleCourses.length > 0) {
             swapHint.innerHTML = `✓ ${swapWeekday} ${targetClass} 有 ${eligibleCourses.length} 堂可互換課程` +
                 (conflictCourses.length > 0 ? `<br><span style="color: #dc2626;">⚠ ${conflictCourses.length} 堂因衝堂無法調換</span>` : '');
             swapHint.style.color = '#16a34a';
