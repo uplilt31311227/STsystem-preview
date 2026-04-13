@@ -2932,23 +2932,21 @@ class SubstituteTeacherApp {
                 swap.dateA, swap.periodA, swap.weekdayA, swap.classNameB);
         });
 
-        // 收集所有涉及的日期
-        const affectedDates = new Set();
+        // 收集所有受影響的 date+period 組合（僅檢查調課涉及的節次）
+        const affectedSlots = new Map();
         this.swapBatch.forEach(swap => {
-            affectedDates.add(swap.dateA);
-            affectedDates.add(swap.dateB);
+            if (!affectedSlots.has(swap.dateA)) affectedSlots.set(swap.dateA, new Set());
+            affectedSlots.get(swap.dateA).add(swap.periodA);
+            if (!affectedSlots.has(swap.dateB)) affectedSlots.set(swap.dateB, new Set());
+            affectedSlots.get(swap.dateB).add(swap.periodB);
         });
 
-        // 對每個涉及的日期+節次，檢查教師是否重複
-        for (const date of affectedDates) {
+        // 對每個受影響的日期+節次，檢查教師是否重複
+        for (const [date, affectedPeriods] of affectedSlots) {
             // 計算此日期的星期
             const weekday = this.getDateWeekday(date);
 
-            // 找出此日期所有節次
-            const periodsOnDay = new Set();
-            scheduleData.filter(c => c.weekday === weekday).forEach(c => periodsOnDay.add(c.period));
-
-            for (const period of periodsOnDay) {
+            for (const period of affectedPeriods) {
                 // 原始排課：此 weekday+period 的所有教師 → 班級
                 const originalAssignments = {};
                 scheduleData.filter(c => c.weekday === weekday && c.period === period)
