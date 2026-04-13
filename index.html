@@ -159,61 +159,51 @@
 
             <!-- 頁籤：課表編輯 -->
             <section id="schedule-editor-tab" class="tab-content hidden">
-                <div class="card">
-                    <h2>教師課表編輯</h2>
-                    <p class="description">手動新增教師並編輯其週課表，完成後即可進行調代課作業</p>
-
-                    <div class="form-row" style="align-items: flex-end;">
-                        <div class="form-group" style="flex: 1;">
+                <div class="card compact-card">
+                    <div class="editor-toolbar">
+                        <div class="editor-toolbar-left">
                             <label for="editor-teacher-select">選擇教師：</label>
                             <select id="editor-teacher-select">
                                 <option value="">請選擇教師</option>
                             </select>
+                            <button class="btn btn-secondary btn-sm" id="editor-add-teacher-btn">+ 新增教師</button>
                         </div>
-                        <div style="margin-left: 10px;">
-                            <button class="btn btn-secondary" id="editor-add-teacher-btn">+ 新增教師</button>
-                        </div>
+                        <p class="hint" style="margin:0;">手動新增教師並編輯其週課表</p>
                     </div>
 
                     <!-- 新增教師表單 -->
-                    <div id="editor-new-teacher-form" class="hidden" style="margin-top: 1rem; padding: 1rem; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
-                        <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">新增教師</h3>
-                        <div class="form-row">
+                    <div id="editor-new-teacher-form" class="hidden" style="margin-top: 0.75rem; padding: 0.75rem; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+                        <div class="form-row" style="align-items: flex-end; margin-bottom: 0;">
                             <div class="form-group">
-                                <label for="editor-new-teacher-name">教師姓名：<span style="color: red;">*</span></label>
-                                <input type="text" id="editor-new-teacher-name" placeholder="請輸入教師姓名">
+                                <label for="editor-new-teacher-name">教師姓名 <span style="color: red;">*</span></label>
+                                <input type="text" id="editor-new-teacher-name" placeholder="教師姓名">
                             </div>
                             <div class="form-group">
-                                <label for="editor-new-teacher-homeroom">導師班級：</label>
+                                <label for="editor-new-teacher-homeroom">導師班級</label>
                                 <input type="text" id="editor-new-teacher-homeroom" placeholder="選填，如：7年1班">
                             </div>
-                        </div>
-                        <div class="action-buttons">
-                            <button class="btn btn-primary" id="editor-confirm-add-teacher-btn">確認新增</button>
-                            <button class="btn btn-secondary" id="editor-cancel-add-teacher-btn">取消</button>
+                            <button class="btn btn-primary btn-sm" id="editor-confirm-add-teacher-btn">確認新增</button>
+                            <button class="btn btn-secondary btn-sm" id="editor-cancel-add-teacher-btn">取消</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- 課表編輯區域 -->
-                <div id="editor-schedule-section" class="card hidden">
+                <div id="editor-schedule-section" class="card compact-card hidden">
                     <div class="editor-schedule-header">
-                        <h2>
+                        <h3>
                             <span id="editor-teacher-name-display"></span> 的週課表
-                        </h2>
-                        <div class="editor-schedule-stats">
-                            <span>每週節數：<strong id="editor-weekly-hours">0</strong></span>
+                            <span class="editor-hours-badge">每週 <strong id="editor-weekly-hours">0</strong> 節</span>
+                        </h3>
+                        <div class="editor-schedule-actions">
+                            <button class="btn btn-primary btn-sm" id="editor-save-schedule-btn">儲存課表</button>
+                            <button class="btn btn-danger btn-sm" id="editor-delete-teacher-btn">刪除此教師</button>
                         </div>
                     </div>
                     <p class="hint">點擊空白格新增課程，點擊已有課程進行編輯或刪除</p>
 
                     <div class="schedule-grid" id="editor-schedule-grid">
                         <!-- 動態生成可編輯週課表 -->
-                    </div>
-
-                    <div class="action-buttons" style="margin-top: 1rem;">
-                        <button class="btn btn-primary" id="editor-save-schedule-btn">儲存課表</button>
-                        <button class="btn btn-danger" id="editor-delete-teacher-btn">刪除此教師</button>
                     </div>
                     <div id="editor-save-status" class="hidden" style="margin-top: 0.5rem;"></div>
                 </div>
@@ -267,104 +257,99 @@
             <!-- 頁籤二：調代課申請 -->
             <section id="substitute-tab" class="tab-content hidden">
                 <!-- 未載入資料提示 -->
-                <div id="substitute-no-data" class="card notice-card">
-                    <div class="notice-icon">⚠️</div>
+                <div id="substitute-no-data" class="card compact-card notice-card notice-card-compact">
                     <h3>尚未載入課表資料</h3>
                     <p>請先至「課表匯入」頁籤上傳課表檔案</p>
                 </div>
 
                 <div id="substitute-content" class="hidden">
-                <!-- 步驟一：基本設定 -->
-                <div class="card">
-                    <h2>步驟一：選擇教師與日期</h2>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="sub-teacher">原任課教師：</label>
-                            <select id="sub-teacher">
-                                <option value="">請選擇教師</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="sub-date">調代課日期：<span id="date-label-hint" style="font-weight: normal; color: #6b7280;"></span></label>
-                            <input type="date" id="sub-date">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 步驟二：選擇異動類型 -->
-                <div id="step-change-type" class="card hidden">
-                    <h2>步驟二：選擇異動類型</h2>
-
-                    <div class="change-type-selector">
-                        <label class="change-type-option">
-                            <input type="radio" name="change-type-radio" value="substitute" checked>
-                            <div class="change-type-card">
-                                <div class="change-type-icon">👤</div>
-                                <div class="change-type-info">
-                                    <strong>代課</strong>
-                                    <span>他人代理授課，原任課教師請假</span>
-                                </div>
-                            </div>
-                        </label>
-                        <label class="change-type-option">
-                            <input type="radio" name="change-type-radio" value="swap">
-                            <div class="change-type-card">
-                                <div class="change-type-icon">🔄</div>
-                                <div class="change-type-info">
-                                    <strong>調課</strong>
-                                    <span>同班級兩堂課互換時段</span>
-                                </div>
-                            </div>
-                        </label>
-                        <label class="change-type-option">
-                            <input type="radio" name="change-type-radio" value="multi-swap">
-                            <div class="change-type-card">
-                                <div class="change-type-icon">🔀</div>
-                                <div class="change-type-info">
-                                    <strong>多重調課</strong>
-                                    <span>多組調課同時進行，新增不設限，送出時整批檢查</span>
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-
-                    <!-- 代課專用：假別選擇（移到選擇課程前） -->
-                    <div id="substitute-options-early" class="substitute-early-options">
-                        <div class="form-row" style="margin-top: 1rem;">
-                            <div class="form-group">
-                                <label for="leave-type">假別：<span style="color: red;">*</span></label>
-                                <select id="leave-type">
-                                    <option value="">請選擇假別</option>
-                                    <optgroup label="公付假別（不扣時數）">
-                                        <option value="official">公假</option>
-                                        <option value="longsick">長期病假（3日以上）</option>
-                                        <option value="funeral">喪假</option>
-                                    </optgroup>
-                                    <optgroup label="一般假別（扣時數）">
-                                        <option value="personal">事假</option>
-                                        <option value="sick">病假</option>
-                                        <option value="rest">休假</option>
-                                        <option value="other">其他</option>
-                                    </optgroup>
+                <!-- 步驟一+二：教師日期 + 異動類型 並排 -->
+                <div class="sub-top-row">
+                    <div class="card compact-card sub-top-left">
+                        <h3>步驟一：選擇教師與日期</h3>
+                        <div class="form-row" style="margin-bottom:0;">
+                            <div class="form-group" style="flex:1;">
+                                <label for="sub-teacher">原任課教師</label>
+                                <select id="sub-teacher">
+                                    <option value="">請選擇教師</option>
                                 </select>
                             </div>
-                            <div class="form-group" id="doc-number-group" style="display: none;">
-                                <label for="doc-number">公假字號：<span style="color: red;">*</span></label>
-                                <input type="text" id="doc-number" placeholder="如：北教字第1140012345號">
+                            <div class="form-group" style="flex:1;">
+                                <label for="sub-date">調代課日期 <span id="date-label-hint" style="font-weight: normal; color: #6b7280;"></span></label>
+                                <input type="date" id="sub-date">
                             </div>
-                            <div class="form-group" style="flex: 1;">
-                                <label for="sub-reason">事由說明：</label>
-                                <input type="text" id="sub-reason" placeholder="選填，如：參加研習、身體不適等">
+                        </div>
+                    </div>
+
+                    <div id="step-change-type" class="card compact-card sub-top-right hidden">
+                        <h3>步驟二：選擇異動類型</h3>
+                        <div class="change-type-selector change-type-compact">
+                            <label class="change-type-option">
+                                <input type="radio" name="change-type-radio" value="substitute" checked>
+                                <div class="change-type-card">
+                                    <div class="change-type-icon">👤</div>
+                                    <div class="change-type-info">
+                                        <strong>代課</strong>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="change-type-option">
+                                <input type="radio" name="change-type-radio" value="swap">
+                                <div class="change-type-card">
+                                    <div class="change-type-icon">🔄</div>
+                                    <div class="change-type-info">
+                                        <strong>調課</strong>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="change-type-option">
+                                <input type="radio" name="change-type-radio" value="multi-swap">
+                                <div class="change-type-card">
+                                    <div class="change-type-icon">🔀</div>
+                                    <div class="change-type-info">
+                                        <strong>多重調課</strong>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 代課專用：假別選擇 -->
+                        <div id="substitute-options-early" class="substitute-early-options">
+                            <div class="form-row" style="margin-top: 0.5rem; margin-bottom: 0;">
+                                <div class="form-group" style="flex:1;">
+                                    <label for="leave-type">假別 <span style="color: red;">*</span></label>
+                                    <select id="leave-type">
+                                        <option value="">請選擇假別</option>
+                                        <optgroup label="公付假別（不扣時數）">
+                                            <option value="official">公假</option>
+                                            <option value="longsick">長期病假（3日以上）</option>
+                                            <option value="funeral">喪假</option>
+                                        </optgroup>
+                                        <optgroup label="一般假別（扣時數）">
+                                            <option value="personal">事假</option>
+                                            <option value="sick">病假</option>
+                                            <option value="rest">休假</option>
+                                            <option value="other">其他</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="doc-number-group" style="display: none; flex:1;">
+                                    <label for="doc-number">公假字號 <span style="color: red;">*</span></label>
+                                    <input type="text" id="doc-number" placeholder="如：北教字第1140012345號">
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="sub-reason">事由說明</label>
+                                    <input type="text" id="sub-reason" placeholder="選填，如：參加研習">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 步驟三：選擇課程 -->
-                <div id="step-select-course" class="card hidden">
+                <div id="step-select-course" class="card compact-card hidden">
                     <div class="step-header-with-toggle">
-                        <h2>步驟三：選擇課程</h2>
+                        <h3>步驟三：選擇課程</h3>
                         <!-- 多節課模式切換 -->
                         <label class="multi-course-toggle">
                             <input type="checkbox" id="multi-course-mode">
@@ -397,8 +382,8 @@
                 </div>
 
                 <!-- 步驟四：選中課程資訊與確認 -->
-                <div id="selected-course-info" class="card hidden">
-                    <h2>步驟四：確認調代課資訊</h2>
+                <div id="selected-course-info" class="card compact-card hidden">
+                    <h3>步驟四：確認調代課資訊</h3>
 
                     <!-- 單節課摘要（原有） -->
                     <div class="selected-course-summary" id="single-course-summary">
@@ -492,15 +477,15 @@
                         </div>
                     </div>
 
-                    <div class="action-buttons" style="margin-top: 1.5rem;">
-                        <button class="btn btn-primary" id="confirm-substitute-btn">確認並產生表單</button>
-                        <button class="btn btn-secondary" id="cancel-substitute-btn">重新選擇</button>
+                    <div class="action-buttons" style="margin-top: 1rem;">
+                        <button class="btn btn-primary btn-sm" id="confirm-substitute-btn">確認並產生表單</button>
+                        <button class="btn btn-secondary btn-sm" id="cancel-substitute-btn">重新選擇</button>
                     </div>
                 </div>
 
                 <!-- 多重調課批次面板（獨立 card，不隨步驟四隱藏） -->
-                <div id="multi-swap-batch-panel" class="card hidden">
-                    <h2>🔀 多重調課批次</h2>
+                <div id="multi-swap-batch-panel" class="card compact-card hidden">
+                    <h3>多重調課批次</h3>
                     <p class="hint">逐一新增調課組合，新增時不設限制。系統會在整批送出時檢查衝突，全部無衝突才可產生表單。</p>
 
                     <!-- 待處理調課清單 -->
@@ -532,15 +517,13 @@
             <!-- 頁籤三：調課紀錄 -->
             <section id="records-tab" class="tab-content hidden">
                 <!-- 未載入資料提示 -->
-                <div id="records-no-data" class="card notice-card">
-                    <div class="notice-icon">⚠️</div>
+                <div id="records-no-data" class="card compact-card notice-card notice-card-compact">
                     <h3>尚未載入課表資料</h3>
                     <p>請先至「課表匯入」頁籤上傳課表檔案</p>
                 </div>
 
                 <div id="records-content" class="hidden">
-                <div class="card">
-                    <h2>調代課紀錄查詢</h2>
+                <div class="card compact-card">
                     <!-- 詳細資料彈窗 -->
                     <div id="record-detail-modal" class="modal hidden">
                         <div class="modal-content">
@@ -553,25 +536,28 @@
                         </div>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="record-start-date">起始日期：</label>
-                            <input type="date" id="record-start-date">
+                    <div class="toolbar-row">
+                        <h3>調代課紀錄查詢</h3>
+                        <div class="toolbar-controls">
+                            <div class="form-group form-group-inline">
+                                <label for="record-start-date">起始</label>
+                                <input type="date" id="record-start-date">
+                            </div>
+                            <div class="form-group form-group-inline">
+                                <label for="record-end-date">結束</label>
+                                <input type="date" id="record-end-date">
+                            </div>
+                            <div class="form-group form-group-inline">
+                                <label for="record-teacher">教師</label>
+                                <select id="record-teacher">
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary btn-sm" id="search-records-btn">查詢</button>
                         </div>
-                        <div class="form-group">
-                            <label for="record-end-date">結束日期：</label>
-                            <input type="date" id="record-end-date">
-                        </div>
-                        <div class="form-group">
-                            <label for="record-teacher">教師篩選：</label>
-                            <select id="record-teacher">
-                                <option value="">全部教師</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" id="search-records-btn">查詢</button>
                     </div>
 
-                    <table class="data-table" id="records-table">
+                    <table class="data-table data-table-compact" id="records-table">
                         <thead>
                             <tr>
                                 <th>日期</th>
@@ -597,48 +583,48 @@
             <!-- 頁籤四：月結算 -->
             <section id="settlement-tab" class="tab-content hidden">
                 <!-- 未載入資料提示 -->
-                <div id="settlement-no-data" class="card notice-card">
-                    <div class="notice-icon">⚠️</div>
+                <div id="settlement-no-data" class="card compact-card notice-card notice-card-compact">
                     <h3>尚未載入課表資料</h3>
                     <p>請先至「課表匯入」頁籤上傳課表檔案</p>
                 </div>
 
                 <div id="settlement-content" class="hidden">
-                <div class="card">
-                    <h2>月結算報表</h2>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="settle-year">學年度：</label>
-                            <select id="settle-year">
-                                <option value="114">114</option>
-                                <option value="113">113</option>
-                            </select>
+                <div class="card compact-card">
+                    <div class="toolbar-row">
+                        <h3>月結算報表</h3>
+                        <div class="toolbar-controls">
+                            <div class="form-group form-group-inline">
+                                <label for="settle-year">學年度</label>
+                                <select id="settle-year">
+                                    <option value="114">114</option>
+                                    <option value="113">113</option>
+                                </select>
+                            </div>
+                            <div class="form-group form-group-inline">
+                                <label for="settle-month">月份</label>
+                                <select id="settle-month">
+                                    <option value="1">1月</option>
+                                    <option value="2">2月</option>
+                                    <option value="3">3月</option>
+                                    <option value="4">4月</option>
+                                    <option value="5">5月</option>
+                                    <option value="6">6月</option>
+                                    <option value="7">7月</option>
+                                    <option value="8">8月</option>
+                                    <option value="9">9月</option>
+                                    <option value="10">10月</option>
+                                    <option value="11">11月</option>
+                                    <option value="12">12月</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary btn-sm" id="generate-settlement-btn">產生結算表</button>
+                            <button class="btn btn-secondary btn-sm" id="export-settlement-btn">匯出 Excel</button>
                         </div>
-                        <div class="form-group">
-                            <label for="settle-month">月份：</label>
-                            <select id="settle-month">
-                                <option value="1">1月</option>
-                                <option value="2">2月</option>
-                                <option value="3">3月</option>
-                                <option value="4">4月</option>
-                                <option value="5">5月</option>
-                                <option value="6">6月</option>
-                                <option value="7">7月</option>
-                                <option value="8">8月</option>
-                                <option value="9">9月</option>
-                                <option value="10">10月</option>
-                                <option value="11">11月</option>
-                                <option value="12">12月</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" id="generate-settlement-btn">產生結算表</button>
-                        <button class="btn btn-secondary" id="export-settlement-btn">匯出 Excel</button>
                     </div>
 
                     <div id="settlement-result" class="hidden">
-                        <div class="settlement-header">
-                            <h3>教師授課時數統計表</h3>
+                        <div class="settlement-header" style="margin-top:0.75rem;">
+                            <span class="hint" style="margin:0;">教師授課時數統計表</span>
                             <div class="settlement-filter">
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="show-changed-only">
@@ -647,7 +633,7 @@
                                 <span id="changed-count" class="changed-count"></span>
                             </div>
                         </div>
-                        <table class="data-table" id="settlement-table">
+                        <table class="data-table data-table-compact" id="settlement-table">
                             <thead>
                                 <tr>
                                     <th>教師姓名</th>
@@ -668,51 +654,55 @@
 
             <!-- 頁籤五：設定 -->
             <section id="settings-tab" class="tab-content hidden">
-                <!-- 雲端同步說明 -->
-                <div class="card">
-                    <h2>雲端同步功能</h2>
-                    <p class="description">使用 Google 帳號登入後，您的資料將自動同步到雲端，可在不同裝置間存取</p>
-
-                    <div class="cloud-sync-info">
+                <div class="settings-layout">
+                <!-- 左側：雲端同步 -->
+                <div class="settings-left">
+                <div class="card compact-card">
+                    <h3>雲端同步</h3>
+                    <div class="cloud-sync-info cloud-sync-compact">
                         <div class="sync-feature">
                             <span class="feature-icon">🔐</span>
                             <div class="feature-content">
                                 <strong>安全登入</strong>
-                                <p>使用 Google 帳號登入，無需額外註冊</p>
+                                <p>Google 帳號登入</p>
                             </div>
                         </div>
                         <div class="sync-feature">
                             <span class="feature-icon">☁️</span>
                             <div class="feature-content">
                                 <strong>自動同步</strong>
-                                <p>資料變更自動同步到雲端，無需手動操作</p>
+                                <p>自動同步到雲端</p>
                             </div>
                         </div>
                         <div class="sync-feature">
                             <span class="feature-icon">📱</span>
                             <div class="feature-content">
                                 <strong>跨裝置存取</strong>
-                                <p>在任何裝置登入同一帳號，即可存取相同資料</p>
+                                <p>不同裝置存取相同資料</p>
                             </div>
                         </div>
                         <div class="sync-feature">
                             <span class="feature-icon">🔒</span>
                             <div class="feature-content">
                                 <strong>資料隔離</strong>
-                                <p>每位使用者的資料獨立儲存，互不影響</p>
+                                <p>獨立儲存互不影響</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="sync-status-section" id="sync-status-section">
                         <div id="sync-logged-out" class="sync-login-prompt">
-                            <p>點擊右上角的「使用 Google 登入」按鈕開始使用雲端同步功能</p>
+                            <p>點擊右上角「使用 Google 登入」開始使用雲端同步</p>
                         </div>
                         <div id="sync-logged-in" class="sync-account-info hidden">
                             <p>✓ 已登入，資料將自動同步到雲端</p>
                         </div>
                     </div>
                 </div>
+                </div>
+
+                <!-- 右側：資料管理 -->
+                <div class="settings-right">
 
                 <!-- 同步衝突對話框 -->
                 <div id="sync-conflict-modal" class="modal hidden">
@@ -805,49 +795,46 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <h2>資料管理</h2>
-                    <p class="description">管理本機儲存的資料（課表、教師、調代課紀錄）</p>
+                <div class="card compact-card">
+                    <h3>資料管理</h3>
 
                     <div class="data-management-section">
-                        <h3>匯出備份</h3>
-                        <p class="hint">將所有資料匯出為 JSON 檔案，可用於備份或轉移至其他裝置</p>
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary" id="export-local-data-btn">匯出完整備份</button>
-                        </div>
+                        <strong>匯出備份</strong>
+                        <p class="hint">匯出為 JSON 檔案，可備份或轉移至其他裝置</p>
+                        <button class="btn btn-secondary btn-sm" id="export-local-data-btn">匯出完整備份</button>
                     </div>
 
                     <div class="data-management-section">
-                        <h3>匯入還原</h3>
-                        <p class="hint">從備份檔案還原資料，將會覆蓋目前的所有資料</p>
+                        <strong>匯入還原</strong>
+                        <p class="hint">從備份檔案還原，將覆蓋目前所有資料</p>
                         <div class="import-area">
                             <input type="file" id="import-data-file" accept=".json" style="display: none;">
-                            <button class="btn btn-primary" id="import-local-data-btn">選擇備份檔案</button>
+                            <button class="btn btn-primary btn-sm" id="import-local-data-btn">選擇備份檔案</button>
                             <span class="import-filename" id="import-filename"></span>
                         </div>
-                        <div id="import-preview" class="import-preview hidden">
+                        <div id="import-preview" class="import-preview import-preview-compact hidden">
                             <h4>檔案內容預覽</h4>
-                            <div class="import-stats" id="import-stats"></div>
+                            <div class="import-stats import-stats-compact" id="import-stats"></div>
                             <div class="import-actions">
-                                <button class="btn btn-primary" id="confirm-import-btn">確認匯入</button>
-                                <button class="btn btn-secondary" id="cancel-import-btn">取消</button>
+                                <button class="btn btn-primary btn-sm" id="confirm-import-btn">確認匯入</button>
+                                <button class="btn btn-secondary btn-sm" id="cancel-import-btn">取消</button>
                             </div>
                         </div>
                     </div>
 
                     <div class="data-management-section danger-zone">
-                        <h3>危險操作</h3>
-                        <div class="action-buttons">
-                            <button class="btn btn-danger" id="clear-local-data-btn">清除所有資料</button>
-                        </div>
+                        <strong>危險操作</strong>
+                        <button class="btn btn-danger btn-sm" id="clear-local-data-btn" style="margin-top:0.4rem;">清除所有資料</button>
                     </div>
+                </div>
+                </div>
                 </div>
             </section>
         </main>
 
         <!-- 底部資訊 -->
         <footer class="footer">
-            <p>國中調代課自動化系統 v1.7.0 | 適用於人力資源網2.0匯出之課表</p>
+            <p>國中調代課自動化系統 v1.9.0 | 適用於人力資源網2.0匯出之課表</p>
             <p class="credit">內湖國中 藍奕麟老師 with Claude Code 製作</p>
         </footer>
     </div>

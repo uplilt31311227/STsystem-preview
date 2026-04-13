@@ -577,6 +577,169 @@ body {
     margin-top: 0.5rem;
 }
 
+/* ===================================
+   全域緊湊布局元件
+   =================================== */
+
+/* 通用 toolbar 列（標題 + 控制項同一行） */
+.toolbar-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.toolbar-row h3 {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.toolbar-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* 行內表單群組（label 與 input 同行） */
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-direction: row;
+}
+
+.form-group-inline label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+.form-group-inline input,
+.form-group-inline select {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.85rem;
+}
+
+/* 緊湊 notice-card */
+.notice-card-compact {
+    padding: 1.5rem 1rem;
+}
+
+.notice-card-compact .notice-icon {
+    display: none;
+}
+
+/* 課表編輯 toolbar */
+.editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.editor-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.editor-toolbar-left label {
+    font-size: 0.9rem;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.editor-toolbar-left select {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.9rem;
+}
+
+.editor-hours-badge {
+    font-size: 0.85rem;
+    font-weight: normal;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+}
+
+.editor-schedule-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* 調代課申請頁籤 - 步驟一+二 並排 */
+.sub-top-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .sub-top-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 緊湊版異動類型選擇器 */
+.change-type-compact {
+    gap: 0.5rem;
+}
+
+.change-type-compact .change-type-card {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+}
+
+.change-type-compact .change-type-icon {
+    font-size: 1rem;
+}
+
+.change-type-compact .change-type-info strong {
+    font-size: 0.9rem;
+}
+
+/* 設定頁籤雙欄 */
+.settings-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 860px) {
+    .settings-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 雲端同步緊湊版 */
+.cloud-sync-compact {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin: 0.75rem 0;
+}
+
+.cloud-sync-compact .sync-feature {
+    padding: 0.6rem;
+    gap: 0.5rem;
+}
+
+.cloud-sync-compact .feature-icon {
+    font-size: 1rem;
+}
+
+.cloud-sync-compact .feature-content strong {
+    font-size: 0.85rem;
+}
+
+.cloud-sync-compact .feature-content p {
+    font-size: 0.75rem;
+}
+
 /* 資料表格樣式 */
 .data-table {
     width: 100%;
