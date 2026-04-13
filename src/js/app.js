@@ -934,8 +934,58 @@ class SubstituteTeacherApp {
         document.getElementById('teacher-count').textContent = parseResult.teachers.length;
         document.getElementById('course-count').textContent = parseResult.scheduleData.length;
 
+        // 檢查課表衝突
+        this.checkScheduleConflicts(parseResult.scheduleData);
+
         // 顯示教師編輯區域
         document.getElementById('teacher-editor').classList.remove('hidden');
+    }
+
+    /**
+     * 檢查課表資料中的衝突（同一教師在同一星期+節次有多個不同班級）
+     */
+    checkScheduleConflicts(scheduleData) {
+        const conflictsEl = document.getElementById('schedule-conflicts');
+        if (!conflictsEl) return;
+
+        // 以 teacher+weekday+period 為 key，收集班級
+        const slotMap = {};
+        scheduleData.forEach(entry => {
+            const key = `${entry.teacher}|${entry.weekday}|${entry.period}`;
+            if (!slotMap[key]) slotMap[key] = [];
+            slotMap[key].push(entry.className);
+        });
+
+        // 找出衝突（同一時段有 2 個以上不同班級）
+        const conflicts = [];
+        for (const [key, classes] of Object.entries(slotMap)) {
+            const uniqueClasses = [...new Set(classes)];
+            if (uniqueClasses.length > 1) {
+                const [teacher, weekday, period] = key.split('|');
+                conflicts.push({ teacher, weekday, period, classes: uniqueClasses });
+            }
+        }
+
+        if (conflicts.length === 0) {
+            conflictsEl.classList.add('hidden');
+            return;
+        }
+
+        // 按教師名排序
+        conflicts.sort((a, b) => a.teacher.localeCompare(b.teacher, 'zh-TW'));
+
+        let html = `<div class="schedule-conflict-warning">`;
+        html += `<div class="schedule-conflict-header">⚠ 課表資料有 ${conflicts.length} 筆衝突（同一教師同時段多班級）</div>`;
+        html += `<ul class="schedule-conflict-list">`;
+        conflicts.forEach(c => {
+            html += `<li><strong>${c.teacher}</strong> ${c.weekday} ${c.period}：${c.classes.join('、')}</li>`;
+        });
+        html += `</ul>`;
+        html += `<div class="schedule-conflict-hint">此為原始課表資料問題，可能為合班授課或資料重複，不影響系統使用。</div>`;
+        html += `</div>`;
+
+        conflictsEl.innerHTML = html;
+        conflictsEl.classList.remove('hidden');
     }
 
     /**
@@ -4066,6 +4116,9 @@ class SubstituteTeacherApp {
             document.getElementById('teacher-count').textContent = teachers.length;
             document.getElementById('course-count').textContent = scheduleData.length;
             document.getElementById('teacher-editor').classList.remove('hidden');
+
+            // 檢查課表衝突
+            this.checkScheduleConflicts(scheduleData);
         }
     }
 
